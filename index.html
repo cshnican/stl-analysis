@@ -123,10 +123,24 @@
     cursor: pointer;
     text-align: center;
   }
-  button:focus-visible, select:focus-visible {
+  button:focus-visible, select:focus-visible, a:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
+  .brand {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+  }
+  .brand a {
+    color: var(--muted);
+    font-size: 14px;
+    text-decoration: none;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 1px;
+  }
+  .brand a:hover { color: var(--accent); border-bottom-color: var(--accent); }
   #stage { transition: opacity .22s ease, transform .22s ease; }
   #stage.leave { opacity: 0; transform: translateY(8px); }
   .hero {
@@ -394,7 +408,10 @@
 <body>
 <main>
   <header class="bar" id="bar">
-    <div class="mark">Share the Love</div>
+    <div class="brand">
+      <div class="mark">Share the Love</div>
+      <a href="song-distribution.html">Where songs come from</a>
+    </div>
     <div class="controls">
       <label class="hodpick">
         <select id="hod" aria-label="Show songs by one head of delegation"></select>
