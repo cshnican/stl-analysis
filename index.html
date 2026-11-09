@@ -55,10 +55,33 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
     gap: 16px;
     padding: 14px 0 12px;
     background: var(--sheet);
   }
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .hodpick select {
+    appearance: none;
+    -webkit-appearance: none;
+    height: 40px;
+    max-width: 240px;
+    padding: 0 16px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  .hodpick select.on { border-color: var(--accent); color: var(--accent); }
   .bar.stuck { box-shadow: inset 0 -1px 0 var(--line); }
   .mark {
     font-family: var(--serif);
@@ -140,6 +163,7 @@
     font-size: 16px;
   }
   .margin { margin-top: 2px; }
+  .gone { display: none !important; }
   .readout {
     min-height: 3.1em;
     margin: 16px 0 12px;
@@ -286,6 +310,7 @@
   @media (max-width: 860px) {
     main { padding: 0 18px 56px; }
     .desk { display: none; }
+    .controls, .hodpick, .hodpick select { width: 100%; max-width: none; }
     .sortbar {
       display: flex;
       align-items: center;
@@ -370,7 +395,11 @@
 <main>
   <header class="bar" id="bar">
     <div class="mark">Share the Love</div>
-    <div class="switch">
+    <div class="controls">
+      <label class="hodpick">
+        <select id="hod" aria-label="Show songs by one head of delegation"></select>
+      </label>
+      <div class="switch">
       <button type="button" id="older" aria-label="Earlier edition">
         <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M8.6 2.8 L4.6 7 L8.6 11.2" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>
       </button>
@@ -378,6 +407,7 @@
       <button type="button" id="newer" aria-label="Later edition">
         <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M5.4 2.8 L9.4 7 L5.4 11.2" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>
       </button>
+      </div>
     </div>
   </header>
   <div id="stage">
@@ -439,12 +469,23 @@ function el(tag, className, text) {
 }
 
 let current = "63";
+let hodFilter = "";
 let sortKey = "rank";
 let sortDir = 1;
 let table = document.querySelector("#board");
 
+function ordinal(n) {
+  const suffix = n % 100 >= 11 && n % 100 <= 13 ? "th" : { 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th";
+  return n + suffix;
+}
+
+function entrantRows(data) {
+  if (!hodFilter) return data.rows;
+  return data.rows.filter((row) => row[2].trim() === hodFilter);
+}
+
 function sortedRows(data) {
-  const rows = data.rows.slice();
+  const rows = entrantRows(data).slice();
   rows.sort((a, b) => {
     if (sortKey === "rank") return (a[0] - b[0]) * sortDir;
     if (sortKey === "points") return (b[6] - a[6]) * sortDir || a[0] - b[0];
@@ -473,14 +514,18 @@ function sortArrow(key) {
 }
 
 function restingReadout(data) {
-  if (!data.voters.length) return "The ballot was not saved. Rank follows the tie-break as far as the 12s, 10s, and 8s.";
-  if (sortKey === "points") return (lowFirst("points") ? "Lowest" : "Highest") + " total first. Click Points again to reverse, or # for the tie-break order.";
+  const whose = hodFilter ? hodFilter + "'s songs. " : "";
+  if (!entrantRows(data).length && hodFilter) return hodFilter + " entered no song in this edition.";
+  if (!data.voters.length) return whose + "The ballot was not saved. Rank follows the tie-break as far as the 12s, 10s, and 8s.";
+  if (sortKey === "points") return whose + (lowFirst("points") ? "Lowest" : "Highest") + " total first. Click Points again to reverse, or # for the tie-break order.";
   if (sortKey !== "rank") {
     const name = data.voters[Number(sortKey)];
-    return name + ", " + (lowFirst(sortKey) ? "lowest" : "highest") + " points first. Click the name again to reverse, or # for the tie-break order.";
+    return whose + name + ", " + (lowFirst(sortKey) ? "lowest" : "highest") + " points first. Click the name again to reverse, or # for the tie-break order.";
   }
-  if (sortDir === -1) return "Tie-break rank, with last place at the top. Click # to restore.";
-  return "Click a name to sort the songs by the points that person gave.";
+  if (sortDir === -1) return whose + "Tie-break rank, with last place at the top. Click # to restore.";
+  return whose + (hodFilter
+    ? "The rank is their place among every song in the edition."
+    : "Click a name to sort the songs by the points that person gave.");
 }
 
 function render(edition) {
@@ -497,21 +542,46 @@ function render(edition) {
   document.title = winner[4] + " · STL " + selected;
 
   const ballots = data.voters.length;
-  document.querySelector("#kicker").textContent = ballots
-    ? "STL " + selected + "  ·  " + ballots + (ballots === 1 ? " ballot" : " ballots")
-    : "STL " + selected + "  ·  Ballot not on file";
-  document.querySelector("#title").textContent = winner[4];
+  const mine = entrantRows(data).slice().sort((a, b) => a[0] - b[0]);
+  const best = mine[0];
   sortKey = "rank";
   sortDir = 1;
   const credit = document.querySelector("#credit");
   credit.replaceChildren();
-  credit.append(winner[5] + " · " + winner[2] + " for " + winner[3]);
-  document.querySelector("#points").textContent = String(winner[6]);
-  document.querySelector("#margin").textContent = !second
-    ? ""
-    : gap === 0
-      ? "Level on points with " + second[4]
-      : gap + (gap === 1 ? " point" : " points") + " ahead of " + second[4];
+  if (!hodFilter) {
+    document.querySelector("#kicker").textContent = ballots
+      ? "STL " + selected + "  ·  " + ballots + (ballots === 1 ? " ballot" : " ballots")
+      : "STL " + selected + "  ·  Ballot not on file";
+    document.querySelector("#title").textContent = winner[4];
+    credit.append(winner[5] + " · " + winner[2] + " for " + winner[3]);
+    document.querySelector("#points").textContent = String(winner[6]);
+    document.querySelector("#margin").textContent = !second
+      ? ""
+      : gap === 0
+        ? "Level on points with " + second[4]
+        : gap + (gap === 1 ? " point" : " points") + " ahead of " + second[4];
+  } else if (!best) {
+    document.title = hodFilter + " · STL " + selected;
+    document.querySelector("#kicker").textContent = "STL " + selected + "  ·  " + hodFilter;
+    document.querySelector("#title").textContent = "No song";
+    credit.append(hodFilter + " entered no song in this edition.");
+    document.querySelector("#points").textContent = "";
+    document.querySelector("#margin").textContent = "";
+  } else {
+    document.title = best[4] + " · " + hodFilter + " · STL " + selected;
+    document.querySelector("#kicker").textContent = "STL " + selected + "  ·  " + ordinal(best[0]) + " of " + rows.length + "  ·  " + hodFilter;
+    document.querySelector("#title").textContent = best[4];
+    credit.append(best[5] + " · " + best[3]);
+    document.querySelector("#points").textContent = String(best[6]);
+    const others = mine.slice(1).map((row) => row[4] + ", " + ordinal(row[0])).join("; ");
+    const behind = winner[6] - best[6];
+    const place = best[0] === 1
+      ? (!second ? "Won this edition" : gap === 0 ? "Level on points with " + second[4] : gap + (gap === 1 ? " point" : " points") + " ahead of " + second[4])
+      : behind === 0
+        ? "Level on points with " + winner[4]
+        : behind + (behind === 1 ? " point" : " points") + " behind " + winner[4];
+    document.querySelector("#margin").textContent = place + (others ? ". Also " + others : "");
+  }
 
   const readout = document.querySelector("#readout");
   readout.classList.remove("live");
@@ -521,7 +591,10 @@ function render(edition) {
   scroller.scrollTop = 0;
   scroller.scrollLeft = 0;
   scroller.classList.remove("scrolled");
-  live.textContent = "STL " + selected + ". " + winner[4] + " by " + winner[5] + ", " + winner[6] + " points.";
+  const shown = best || winner;
+  live.textContent = hodFilter
+    ? (best ? hodFilter + " in STL " + selected + ". " + best[4] + ", " + ordinal(best[0]) + ", " + best[6] + " points." : hodFilter + " entered no song in STL " + selected + ".")
+    : "STL " + selected + ". " + shown[4] + " by " + shown[5] + ", " + shown[6] + " points.";
 }
 
 function paintBoard() {
@@ -655,6 +728,10 @@ function paintBoard() {
     pocket.appendChild(ballot);
   });
 
+  const empty = hodFilter && !rows.length;
+  scroller.classList.toggle("gone", empty);
+  document.querySelector(".sortbar").classList.toggle("gone", empty);
+  pocket.classList.toggle("gone", empty);
   document.querySelector("#rule").textContent = data.partial ? PARTIAL_RULE : FULL_RULE;
   const readout = document.querySelector("#readout");
   if (!readout.classList.contains("live")) readout.textContent = restingReadout(data);
@@ -777,6 +854,23 @@ document.querySelector("#pocket").addEventListener("click", (event) => {
     btn.setAttribute("aria-expanded", "true");
     ballot.classList.add("open");
   }
+});
+
+const hodSelect = document.querySelector("#hod");
+const people = [...new Set(Object.values(BOARDS).flatMap((board) => board.rows.map((row) => row[2].trim())))]
+  .sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }));
+const everyone = el("option", "", "Every head of delegation");
+everyone.value = "";
+hodSelect.appendChild(everyone);
+people.forEach((name) => {
+  const option = el("option", "", name);
+  option.value = name;
+  hodSelect.appendChild(option);
+});
+hodSelect.addEventListener("change", () => {
+  hodFilter = hodSelect.value;
+  hodSelect.classList.toggle("on", Boolean(hodFilter));
+  render(current);
 });
 
 function editionFromHash() {
