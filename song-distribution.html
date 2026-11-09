@@ -225,7 +225,8 @@
     background: var(--sheet);
     border-top: 1px solid var(--line-strong);
   }
-  svg.map { touch-action: none; cursor: grab; }
+  svg.map, svg.best-map { touch-action: pan-y; cursor: grab; }
+  svg.map.zoomed, svg.best-map.zoomed { touch-action: none; }
   .song-block { margin-top: 18px; }
   .song-block h3 { margin-bottom: 8px; }
   #map-name { margin: 4px 0 0; font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -0.035em; }
@@ -233,7 +234,16 @@
   footer p { color: var(--faint); font-size: 12px; max-width: 78ch; }
   @media (max-width: 860px) {
     main { padding: 0 18px 56px; }
-    .maps { grid-template-columns: 1fr; }
+    .maps {
+      display: flex;
+      gap: 14px;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scroll-snap-type: x mandatory;
+      padding-bottom: 8px;
+      scrollbar-width: thin;
+    }
+    .map-card { flex: 0 0 min(78vw, 320px); scroll-snap-align: start; }
     .bar-row { grid-template-columns: minmax(88px, 1fr) 1.4fr auto; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -297,12 +307,17 @@
   <hr>
   <section>
     <h2>Best result in each country</h2>
-    <p class="lede" style="margin:8px 0 14px">Each country is shaded by the best place one of its songs has reached. A first place is the darkest. 36 countries have won. Iceland's best is Eyjanótt by Klara Elias, entered by Alex, with 596 Eurovision-scale points. Tuvalu's best is 33rd, Lakalaka by Ta Vaka, entered by Matthew. Hover a country for the song, the artist, and the head of delegation.</p>
-    <div id="best-map-wrap"></div>
+    <p class="lede" style="margin:8px 0 14px">Each country is shaded by the best place one of its songs has reached. A first place is the darkest. 36 countries have won. Iceland's best is Eyjanótt by Klara Elias, entered by Alex, with 596 Eurovision-scale points. Tuvalu's best is 33rd, Lakalaka by Ta Vaka, entered by Matthew. Tap or hover a country for the song, the artist, and the head of delegation.</p>
+    <div class="tools">
+      <button type="button" id="best-zoom-in">Zoom in</button>
+      <button type="button" class="ghost" id="best-zoom-out">Zoom out</button>
+      <button type="button" class="ghost" id="best-zoom-reset">Reset zoom</button>
+    </div>
+    <div id="best-map-wrap" style="margin-top:12px"></div>
     <div id="best-hover"></div>
     <div class="legend" id="best-legend"></div>
     <div class="scroll" id="best-table-wrap"><table id="best-table"></table></div>
-    <p class="note" style="margin-top:8px">Source: entry_data.csv · STL editions 1–63. For each country, the best result is the best placing. If several songs share that place, the one with more Eurovision-scale points is shown, and a later edition breaks a remaining tie. Eurovision-scale points are 1,008 times the song’s percentage of the maximum vote, rounded to the nearest point. Color on the map is that place. England, Scotland, Wales, and Northern Ireland are dots, and Malta is a dot. Ivory Coast and Côte d'Ivoire share one shape; the shade is Côte d'Ivoire's 14th place, which is better than Ivory Coast's 31st. Republic Of Congo in the file is counted as Republic of the Congo. The detail stays on the last country you hover.</p>
+    <p class="note" style="margin-top:8px">Source: entry_data.csv · STL editions 1–63. For each country, the best result is the best placing. If several songs share that place, the one with more Eurovision-scale points is shown, and a later edition breaks a remaining tie. Eurovision-scale points are 1,008 times the song’s percentage of the maximum vote, rounded to the nearest point. Color on the map is that place. England, Scotland, Wales, and Northern Ireland are dots, and Malta is a dot. Ivory Coast and Côte d'Ivoire share one shape; the shade is Côte d'Ivoire's 14th place, which is better than Ivory Coast's 31st. Republic Of Congo in the file is counted as Republic of the Congo. The detail stays on the last country you tap or hover. Pinch or use the buttons to zoom, then drag to move the map. Until it is zoomed, a finger scrolls the page.</p>
   </section>
 
   <hr>
@@ -318,7 +333,7 @@
     <div id="large-map-wrap" style="margin-top:12px"></div>
     <div id="hover-songs"></div>
     <div class="legend" id="map-legend"></div>
-    <p class="note">Longitude runs left to right. Latitude runs top to bottom, with a Mercator projection cropped south of 56 degrees. Color is the song count on the same square-root scale as the heatmap. England, Scotland, Wales, and Northern Ireland are dots, not part of the United Kingdom shape. Malta is a dot. Scroll or use the buttons to zoom the large map. Drag to move it. Double-click to zoom in. The song list shows Eurovision-scale points and stays on the last country you hover, including on a smaller map. Select a map below to enlarge that person.</p>
+    <p class="note">Longitude runs left to right. Latitude runs top to bottom, with a Mercator projection cropped south of 56 degrees. Color is the song count on the same square-root scale as the heatmap. England, Scotland, Wales, and Northern Ireland are dots, not part of the United Kingdom shape. Malta is a dot. Pinch, scroll, or use the buttons to zoom the large map. Drag to move it after it is zoomed. Until then, a finger scrolls the page. Double-click to zoom in. Tap or hover a country to keep its song list, including on a smaller map. Select a map below to enlarge that person.</p>
     <div class="maps" id="thumbs"></div>
   </section>
 
@@ -506,8 +521,9 @@ function clampMapView(x, y, width) {
   };
 }
 function writeMapView(svg, view) {
-  mapView = view;
+  if (svg.id === "large-map") mapView = view;
   svg.setAttribute("viewBox", `${view.x} ${view.y} ${view.width} ${view.height}`);
+  svg.classList.toggle("zoomed", view.width < MAP_W - 0.5);
   const scale = view.width / MAP_W;
   svg.querySelectorAll("circle").forEach((circle) => {
     const base = Number(circle.getAttribute("data-r"));
@@ -528,7 +544,7 @@ function zoomMapAt(svg, clientX, clientY, factor) {
 function bindMapZoom(svg) {
   if (svg.dataset.bound === "1") return;
   svg.dataset.bound = "1";
-  writeMapView(svg, { x: 0, y: 0, width: MAP_W, height: MAP_H });
+  if (!svg.getAttribute("viewBox")) writeMapView(svg, { x: 0, y: 0, width: MAP_W, height: MAP_H });
   svg.addEventListener("wheel", (event) => {
     event.preventDefault();
     zoomMapAt(svg, event.clientX, event.clientY, Math.exp(event.deltaY * 0.0015));
@@ -539,25 +555,82 @@ function bindMapZoom(svg) {
   });
   let drag = null;
   svg.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0) return;
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    if (event.pointerType !== "mouse" && readMapView(svg).width >= MAP_W - 0.5) return;
     const view = readMapView(svg);
-    drag = { x: event.clientX, y: event.clientY, viewX: view.x, viewY: view.y, width: view.width, height: view.height };
+    drag = { id: event.pointerId, x: event.clientX, y: event.clientY, viewX: view.x, viewY: view.y, width: view.width, moved: false };
     svg.setPointerCapture(event.pointerId);
-    svg.style.cursor = "grabbing";
+    if (event.pointerType === "mouse") svg.style.cursor = "grabbing";
   });
   svg.addEventListener("pointermove", (event) => {
-    if (!drag) return;
+    if (!drag || event.pointerId !== drag.id) return;
+    if (Math.hypot(event.clientX - drag.x, event.clientY - drag.y) > 6) drag.moved = true;
     const rect = svg.getBoundingClientRect();
     const dx = rect.width > 0 ? ((event.clientX - drag.x) / rect.width) * drag.width : 0;
     const dy = rect.height > 0 ? ((event.clientY - drag.y) / rect.height) * drag.height : 0;
     writeMapView(svg, clampMapView(drag.viewX - dx, drag.viewY - dy, drag.width));
   });
-  const endDrag = () => { drag = null; svg.style.cursor = "grab"; };
+  const endDrag = (event) => {
+    if (!drag || event.pointerId !== drag.id) return;
+    if (drag.moved) svg.dataset.skipClick = "1";
+    drag = null;
+    svg.style.cursor = "grab";
+  };
   svg.addEventListener("pointerup", endDrag);
   svg.addEventListener("pointercancel", endDrag);
+  let pinch = null;
+  svg.addEventListener("touchstart", (event) => {
+    if (event.touches.length !== 2) return;
+    event.preventDefault();
+    drag = null;
+    const [a, b] = event.touches;
+    pinch = {
+      dist: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1,
+      view: readMapView(svg),
+      cx: (a.clientX + b.clientX) / 2,
+      cy: (a.clientY + b.clientY) / 2,
+    };
+  }, { passive: false });
+  svg.addEventListener("touchmove", (event) => {
+    if (!pinch || event.touches.length < 2) return;
+    event.preventDefault();
+    const [a, b] = event.touches;
+    const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1;
+    const cx = (a.clientX + b.clientX) / 2;
+    const cy = (a.clientY + b.clientY) / 2;
+    const rect = svg.getBoundingClientRect();
+    const ox = rect.width > 0 ? (pinch.cx - rect.left) / rect.width : 0.5;
+    const oy = rect.height > 0 ? (pinch.cy - rect.top) / rect.height : 0.5;
+    const px = rect.width > 0 ? (cx - rect.left) / rect.width : 0.5;
+    const py = rect.height > 0 ? (cy - rect.top) / rect.height : 0.5;
+    const anchorX = pinch.view.x + ox * pinch.view.width;
+    const anchorY = pinch.view.y + oy * pinch.view.height;
+    const width = pinch.view.width * (pinch.dist / dist);
+    writeMapView(svg, clampMapView(anchorX - px * width, anchorY - py * heightFrom(width), width));
+    svg.dataset.skipClick = "1";
+  }, { passive: false });
+  svg.addEventListener("touchend", (event) => {
+    if (event.touches.length < 2) pinch = null;
+  });
+}
+function bindPick(svg, apply) {
+  if (svg.dataset.pickBound === "1") return;
+  svg.dataset.pickBound = "1";
+  svg.addEventListener("click", (event) => {
+    if (svg.dataset.skipClick === "1") {
+      svg.dataset.skipClick = "";
+      return;
+    }
+    const card = svg.closest(".map-card");
+    if (card && Math.hypot(event.clientX - Number(card.dataset.x), event.clientY - Number(card.dataset.y)) > 8) return;
+    const el = event.target.closest("[data-pick]");
+    if (!el || !svg.contains(el)) return;
+    apply(el.dataset.pick);
+  });
 }
 function paintMap(svg, index, zoomable) {
   const ns = "http://www.w3.org/2000/svg";
+  bindPick(svg, setHover);
   svg.setAttribute("viewBox", zoomable ? `${mapView.x} ${mapView.y} ${mapView.width} ${mapView.height}` : `0 0 ${MAP_W} ${MAP_H}`);
   svg.setAttribute("class", zoomable ? "map" : "thumb");
   svg.setAttribute("role", "img");
@@ -580,6 +653,7 @@ function paintMap(svg, index, zoomable) {
     path.setAttribute("stroke-width", "0.8");
     path.setAttribute("vector-effect", "non-scaling-stroke");
     path.style.cursor = count > 0 ? "pointer" : (zoomable ? "grab" : "default");
+    if (count > 0) path.dataset.pick = `${index}:${active.join(",")}`;
     path.addEventListener("mouseenter", () => setHover(count > 0 ? `${index}:${active.join(",")}` : ""));
     svg.appendChild(path);
   }
@@ -597,6 +671,7 @@ function paintMap(svg, index, zoomable) {
     circle.setAttribute("stroke", "var(--ink)");
     circle.setAttribute("stroke-width", "1.4");
     circle.setAttribute("vector-effect", "non-scaling-stroke");
+    circle.dataset.pick = `${index}:${dot.id}`;
     circle.style.cursor = "pointer";
     circle.addEventListener("mouseenter", () => setHover(`${index}:${dot.id}`));
     svg.appendChild(circle);
@@ -633,7 +708,7 @@ function renderMapHeading() {
   const songs = HOD_TOTALS[hodIndex];
   const countries = MATRIX[hodIndex].filter((n) => n > 0).length;
   document.getElementById("map-name").textContent = HODS[hodIndex];
-  document.getElementById("map-blurb").textContent = `${songs} songs in ${countries} countries. Shaded land is the song count. A dot is a country too small to draw as a shape. Hover a country to list that person's five highest-scoring songs there.`;
+  document.getElementById("map-blurb").textContent = `${songs} songs in ${countries} countries. Shaded land is the song count. A dot is a country too small to draw as a shape. Tap or hover a country to list that person's five highest-scoring songs there.`;
   document.querySelectorAll(".map-card").forEach((card, i) => card.classList.toggle("on", i === hodIndex));
 }
 function selectHod(index) {
@@ -671,7 +746,14 @@ HODS.forEach((hod, index) => {
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   paintMap(svg, index, false);
   card.append(heading, caption, svg);
-  card.addEventListener("click", () => selectHod(index));
+  card.addEventListener("pointerdown", (event) => {
+    card.dataset.x = String(event.clientX);
+    card.dataset.y = String(event.clientY);
+  });
+  card.addEventListener("click", (event) => {
+    if (Math.hypot(event.clientX - Number(card.dataset.x), event.clientY - Number(card.dataset.y)) > 8) return;
+    selectHod(index);
+  });
   thumbs.appendChild(card);
 });
 
@@ -709,6 +791,7 @@ function setBestHover(value) {
 }
 function paintBestMap(svg) {
   const ns = "http://www.w3.org/2000/svg";
+  bindPick(svg, setBestHover);
   svg.setAttribute("viewBox", `0 0 ${MAP_W} ${MAP_H}`);
   svg.setAttribute("class", "best-map");
   svg.setAttribute("role", "img");
@@ -731,6 +814,7 @@ function paintBestMap(svg) {
     path.setAttribute("stroke-width", "0.8");
     path.setAttribute("vector-effect", "non-scaling-stroke");
     path.style.cursor = active.length ? "pointer" : "default";
+    if (active.length) path.dataset.pick = active.join(",");
     path.addEventListener("mouseenter", () => { if (active.length) setBestHover(active.join(",")); });
     svg.appendChild(path);
   }
@@ -741,6 +825,8 @@ function paintBestMap(svg) {
     circle.setAttribute("cx", dot.x);
     circle.setAttribute("cy", dot.y);
     circle.setAttribute("r", 12);
+    circle.setAttribute("data-r", "12");
+    circle.dataset.pick = String(dot.id);
     circle.setAttribute("fill", placeColor(row[1]));
     circle.setAttribute("stroke", "var(--ink)");
     circle.setAttribute("stroke-width", "1.4");
@@ -753,6 +839,14 @@ function paintBestMap(svg) {
 const bestSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 document.getElementById("best-map-wrap").appendChild(bestSvg);
 paintBestMap(bestSvg);
+bindMapZoom(bestSvg);
+const zoomBest = (factor) => {
+  const rect = bestSvg.getBoundingClientRect();
+  zoomMapAt(bestSvg, rect.left + rect.width / 2, rect.top + rect.height / 2, factor);
+};
+document.getElementById("best-zoom-in").onclick = () => zoomBest(1 / 1.35);
+document.getElementById("best-zoom-out").onclick = () => zoomBest(1.35);
+document.getElementById("best-zoom-reset").onclick = () => writeMapView(bestSvg, { x: 0, y: 0, width: MAP_W, height: MAP_H });
 document.getElementById("best-legend").innerHTML = "<span>Best place</span>" + [1, 5, 10, 20, 33].map((place) =>
   `<span><i class="swatch" style="background:${placeColor(place)}"></i> ${placeLabel(place)}</span>`).join("");
 const ranked = COUNTRIES.map((name, index) => ({ name, index })).sort((a, b) => {
