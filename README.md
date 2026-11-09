@@ -4,7 +4,7 @@ Share the Love (STL) is a song contest. This repository holds the results throug
 
 ## Pages
 
-- `scoreboard.html` is the edition scoreboard. Each row is a song and each column is a head of delegation who voted. Rank follows the Eurovision tie-break: higher points, then more 12s, then more 10s, then 8s, and on through 1. If the whole card matches, the song earlier in the running order places higher. Click a name to sort the songs by the points that person gave. Click `#` to return to the tie-break order.
+- `index.html` is the edition scoreboard. Each row is a song and each column is a head of delegation who voted. Rank follows the Eurovision tie-break: higher points, then more 12s, then more 10s, then 8s, and on through 1. If the whole card matches, the song earlier in the running order places higher. Click a name to sort the songs by the points that person gave. Click `#` to return to the tie-break order.
 - `song-distribution.html` shows where the 1,845 songs come from. It covers heads of delegation, countries, artist averages, and the highest scores.
 
 Eurovision-scale points are 1,008 times a song's percentage of the maximum vote, rounded to the nearest point. 1,008 is the maximum from 42 voting countries giving 24 points each.
