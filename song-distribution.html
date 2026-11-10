@@ -214,36 +214,22 @@
   }
   .cell.on { outline: 1px solid var(--ink); outline-offset: -1px; }
   .swatch { width: 14px; height: 14px; display: inline-block; vertical-align: -2px; }
-  .maps { display: grid; grid-template-columns: 1fr 1fr; gap: 28px 24px; margin-top: 22px; }
-  .map-card { cursor: pointer; }
-  .map-card.on h3 { color: var(--accent); }
-  .map-card p { margin: 2px 0 8px; color: var(--faint); font-size: 13px; }
-  svg.map, svg.thumb, svg.best-map {
+  svg.best-map {
     display: block;
     width: 100%;
     aspect-ratio: 1000 / 547.2;
     background: var(--sheet);
     border-top: 1px solid var(--line-strong);
+    touch-action: pan-y;
+    cursor: grab;
   }
-  svg.map, svg.best-map { touch-action: pan-y; cursor: grab; }
-  svg.map.zoomed, svg.best-map.zoomed { touch-action: none; }
+  svg.best-map.zoomed { touch-action: none; }
   .song-block { margin-top: 18px; }
   .song-block h3 { margin-bottom: 8px; }
-  #map-name { margin: 4px 0 0; font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -0.035em; }
   footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); }
   footer p { color: var(--faint); font-size: 12px; max-width: 78ch; }
   @media (max-width: 860px) {
     main { padding: 0 18px 56px; }
-    .maps {
-      display: flex;
-      gap: 14px;
-      overflow-x: auto;
-      overscroll-behavior-x: contain;
-      scroll-snap-type: x mandatory;
-      padding-bottom: 8px;
-      scrollbar-width: thin;
-    }
-    .map-card { flex: 0 0 min(78vw, 320px); scroll-snap-align: start; }
     .bar-row { grid-template-columns: minmax(88px, 1fr) 1.4fr auto; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -318,23 +304,6 @@
     <div class="legend" id="best-legend"></div>
     <div class="scroll" id="best-table-wrap"><table id="best-table"></table></div>
     <p class="note" style="margin-top:8px">Source: entry_data.csv · STL editions 1–63. For each country, the best result is the best placing. If several songs share that place, the one with more Eurovision-scale points is shown, and a later edition breaks a remaining tie. Eurovision-scale points are 1,008 times the song’s percentage of the maximum vote, rounded to the nearest point. Color on the map is that place. England, Scotland, Wales, and Northern Ireland are dots, and Malta is a dot. Ivory Coast and Côte d'Ivoire share one shape; the shade is Côte d'Ivoire's 14th place, which is better than Ivory Coast's 31st. Republic Of Congo in the file is counted as Republic of the Congo. The detail stays on the last country you tap or hover. Pinch or use the buttons to zoom, then drag to move the map. Until it is zoomed, a finger scrolls the page.</p>
-  </section>
-
-  <hr>
-  <section>
-    <h2>Song map for each head of delegation</h2>
-    <h3 id="map-name" style="margin:12px 0 0"></h3>
-    <p class="lede" id="map-blurb" style="margin:4px 0 12px"></p>
-    <div class="tools">
-      <button type="button" id="zoom-in">Zoom in</button>
-      <button type="button" class="ghost" id="zoom-out">Zoom out</button>
-      <button type="button" class="ghost" id="zoom-reset">Reset zoom</button>
-    </div>
-    <div id="large-map-wrap" style="margin-top:12px"></div>
-    <div id="hover-songs"></div>
-    <div class="legend" id="map-legend"></div>
-    <p class="note">Longitude runs left to right. Latitude runs top to bottom, with a Mercator projection cropped south of 56 degrees. Color is the song count on the same square-root scale as the heatmap. England, Scotland, Wales, and Northern Ireland are dots, not part of the United Kingdom shape. Malta is a dot. Pinch, scroll, or use the buttons to zoom the large map. Drag to move it after it is zoomed. Until then, a finger scrolls the page. Double-click to zoom in. Tap or hover a country to keep its song list, including on a smaller map. Select a map below to enlarge that person.</p>
-    <div class="maps" id="thumbs"></div>
   </section>
 
   <hr>
@@ -417,9 +386,8 @@ table(
   [false, false, true, true, true],
 );
 legend(document.getElementById("heat-legend"));
-legend(document.getElementById("map-legend"));
 
-let minSongs = 10, selected = "", hodIndex = 6, hover = "";
+let minSongs = 10, selected = "";
 
 function renderFilters() {
   const host = document.getElementById("filters");
@@ -628,135 +596,6 @@ function bindPick(svg, apply) {
     apply(el.dataset.pick);
   });
 }
-function paintMap(svg, index, zoomable) {
-  const ns = "http://www.w3.org/2000/svg";
-  bindPick(svg, setHover);
-  svg.setAttribute("viewBox", zoomable ? `${mapView.x} ${mapView.y} ${mapView.width} ${mapView.height}` : `0 0 ${MAP_W} ${MAP_H}`);
-  svg.setAttribute("class", zoomable ? "map" : "thumb");
-  svg.setAttribute("role", "img");
-  svg.setAttribute("aria-label", "Songs entered by " + HODS[index]);
-  svg.replaceChildren();
-  const ocean = document.createElementNS(ns, "rect");
-  ocean.setAttribute("x", -MAP_W);
-  ocean.setAttribute("y", -MAP_H);
-  ocean.setAttribute("width", MAP_W * 3);
-  ocean.setAttribute("height", MAP_H * 3);
-  ocean.setAttribute("fill", "var(--sheet)");
-  svg.appendChild(ocean);
-  for (const shape of D.shapes) {
-    const active = shape.ids.filter((id) => MATRIX[index][id] > 0);
-    const count = active.reduce((sum, id) => sum + MATRIX[index][id], 0);
-    const path = document.createElementNS(ns, "path");
-    path.setAttribute("d", shape.d);
-    path.setAttribute("fill", count > 0 ? cellColor(count) : "var(--empty)");
-    path.setAttribute("stroke", "var(--line)");
-    path.setAttribute("stroke-width", "0.8");
-    path.setAttribute("vector-effect", "non-scaling-stroke");
-    path.style.cursor = count > 0 ? "pointer" : (zoomable ? "grab" : "default");
-    if (count > 0) path.dataset.pick = `${index}:${active.join(",")}`;
-    path.addEventListener("mouseenter", () => setHover(count > 0 ? `${index}:${active.join(",")}` : ""));
-    svg.appendChild(path);
-  }
-  const scale = zoomable ? mapView.width / MAP_W : 1;
-  for (const dot of D.dots) {
-    const count = MATRIX[index][dot.id];
-    if (count <= 0) continue;
-    const radius = 11 + 14 * Math.sqrt(count / 31);
-    const circle = document.createElementNS(ns, "circle");
-    circle.setAttribute("cx", dot.x);
-    circle.setAttribute("cy", dot.y);
-    circle.setAttribute("r", radius * scale);
-    circle.setAttribute("data-r", radius);
-    circle.setAttribute("fill", cellColor(count));
-    circle.setAttribute("stroke", "var(--ink)");
-    circle.setAttribute("stroke-width", "1.4");
-    circle.setAttribute("vector-effect", "non-scaling-stroke");
-    circle.dataset.pick = `${index}:${dot.id}`;
-    circle.style.cursor = "pointer";
-    circle.addEventListener("mouseenter", () => setHover(`${index}:${dot.id}`));
-    svg.appendChild(circle);
-  }
-}
-function setHover(value) {
-  hover = value;
-  const host = document.getElementById("hover-songs");
-  host.replaceChildren();
-  if (!hover.includes(":")) return;
-  const [hodText, countryText] = hover.split(":");
-  const hi = Number(hodText);
-  const ids = countryText.split(",").map(Number).filter((id) => (D.topSongs[hi + ":" + id] || []).length > 0);
-  for (const id of ids) {
-    const block = document.createElement("div");
-    block.className = "song-block";
-    const title = document.createElement("h3");
-    title.textContent = HODS[hi] + " · " + COUNTRIES[id];
-    const wrap = document.createElement("div");
-    wrap.className = "scroll";
-    const tbl = document.createElement("table");
-    table(
-      tbl,
-      ["Eurovision-scale points", "Place", "Edition", "Song", "Artist"],
-      (D.topSongs[hi + ":" + id] || []).map(([edition, points, place, song, artist]) => [points, place, "STL " + edition, song, artist]),
-      [true, true, true, false, false],
-    );
-    wrap.appendChild(tbl);
-    block.append(title, wrap);
-    host.appendChild(block);
-  }
-}
-function renderMapHeading() {
-  const songs = HOD_TOTALS[hodIndex];
-  const countries = MATRIX[hodIndex].filter((n) => n > 0).length;
-  document.getElementById("map-name").textContent = HODS[hodIndex];
-  document.getElementById("map-blurb").textContent = `${songs} songs in ${countries} countries. Shaded land is the song count. A dot is a country too small to draw as a shape. Tap or hover a country to list that person's five highest-scoring songs there.`;
-  document.querySelectorAll(".map-card").forEach((card, i) => card.classList.toggle("on", i === hodIndex));
-}
-function selectHod(index) {
-  hodIndex = index;
-  renderMapHeading();
-  const svg = document.getElementById("large-map");
-  paintMap(svg, hodIndex, true);
-  writeMapView(svg, mapView);
-}
-
-const large = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-large.id = "large-map";
-document.getElementById("large-map-wrap").appendChild(large);
-bindMapZoom(large);
-paintMap(large, hodIndex, true);
-writeMapView(large, mapView);
-document.getElementById("zoom-in").onclick = () => {
-  const rect = large.getBoundingClientRect();
-  zoomMapAt(large, rect.left + rect.width / 2, rect.top + rect.height / 2, 1 / 1.35);
-};
-document.getElementById("zoom-out").onclick = () => {
-  const rect = large.getBoundingClientRect();
-  zoomMapAt(large, rect.left + rect.width / 2, rect.top + rect.height / 2, 1.35);
-};
-document.getElementById("zoom-reset").onclick = () => writeMapView(large, { x: 0, y: 0, width: MAP_W, height: MAP_H });
-
-const thumbs = document.getElementById("thumbs");
-HODS.forEach((hod, index) => {
-  const card = document.createElement("div");
-  card.className = "map-card" + (index === hodIndex ? " on" : "");
-  const heading = document.createElement("h3");
-  heading.textContent = hod;
-  const caption = document.createElement("p");
-  caption.textContent = HOD_TOTALS[index] + " songs";
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  paintMap(svg, index, false);
-  card.append(heading, caption, svg);
-  card.addEventListener("pointerdown", (event) => {
-    card.dataset.x = String(event.clientX);
-    card.dataset.y = String(event.clientY);
-  });
-  card.addEventListener("click", (event) => {
-    if (Math.hypot(event.clientX - Number(card.dataset.x), event.clientY - Number(card.dataset.y)) > 8) return;
-    selectHod(index);
-  });
-  thumbs.appendChild(card);
-});
-
 function placeColor(place) {
   const strength = 1 - (place - 1) / 32;
   const percent = Math.round(18 + 82 * Math.max(0, Math.min(1, strength)));
