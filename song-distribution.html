@@ -226,8 +226,8 @@
   svg.best-map.zoomed { touch-action: none; }
   .song-block { margin-top: 18px; }
   .song-block h3 { margin-bottom: 8px; }
-  .song-block h3 a { color: inherit; text-decoration: none; border-bottom: 1px solid var(--line); }
-  .song-block h3 a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  .song-block h3 a, a.artist { color: inherit; text-decoration: none; border-bottom: 1px solid var(--line); }
+  .song-block h3 a:hover, a.artist:hover { color: var(--accent); border-bottom-color: var(--accent); }
   footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); }
   footer p { color: var(--faint); font-size: 12px; max-width: 78ch; }
   @media (max-width: 860px) {
@@ -335,15 +335,15 @@ function cellColor(count) {
   const percent = Math.round(22 + 78 * Math.sqrt(count / MAX_SONGS));
   return `color-mix(in srgb, var(--accent) ${percent}%, var(--empty))`;
 }
-function table(el, headers, rows, numeric) {
+function table(el, headers, rows, numeric, raw) {
   const thead = "<tr>" + headers.map((header, i) => `<th class="${numeric[i] ? "num" : ""}">${esc(header)}</th>`).join("") + "</tr>";
-  const body = rows.map((row) => "<tr>" + row.map((cell, i) => `<td class="${numeric[i] ? "num" : ""}">${esc(cell)}</td>`).join("") + "</tr>").join("");
+  const body = rows.map((row) => "<tr>" + row.map((cell, i) => `<td class="${numeric[i] ? "num" : ""}">${raw && raw[i] ? cell : esc(cell)}</td>`).join("") + "</tr>").join("");
   el.innerHTML = thead + body;
 }
-function bars(el, items, max) {
+function bars(el, items, max, rawLabel) {
   el.innerHTML = items.map((item) => `
     <div class="bar-row">
-      <span>${esc(item.label)}</span>
+      <span>${rawLabel ? item.label : esc(item.label)}</span>
       <div class="bar-track"><div class="bar-fill" style="width:${(100 * item.value / max).toFixed(1)}%"></div></div>
       <span>${esc(item.text)}</span>
     </div>`).join("");
@@ -353,19 +353,94 @@ function legend(el) {
     `<span><i class="swatch" style="background:${cellColor(n)}"></i> ${n}</span>`).join("");
 }
 
+const ARTIST_NAMES = ["AIDAN","Aitana","Alexia Evellyn","Alvaro Soler","Ana Mena","Anastasia","Antigoni","Artem Pivovarov","Artemas","Aura Dione","Ava Max","Avril Lavigne","Ayliva","Azahriah","Bad Bunny","BESS","Billie Eilish","Birdy","BLACKPINK","Bobi Andonov","Breskvica","Calema","Calum Scott","Calvin Harris","Camille","Carolina Deslandes","Charli XCX","Charlotte Cardin","Cian Ducrot","Conan Gray","Dagny","David Guetta","Davina Michelle","Dean Lewis","Demi Lovato","Dhurata Dora","Dotan","Dua Lipa","Džejla Ramović","Edis","Ella Eyre","Ella Henderson","Elvana Gjata","Emeli Sandé","Emilia","Emma Heesters","ENISA","Evangelia","Faouzia","Federico Rossi","Fedez","Fernando Daniel","Freya Ridings","Gaia","Galena","Grace Carter","Haloo Helsinki!","Hecht","Hozier","ICEGUYS","ILIRA","Ilta","Indila","INNA","Irina Rimes","J Balvin","Jamie Miller","Jessica Shy","Josephine","Kabouter Plop","Karl-Erik Taukar","KAZKA","Kendji Girac","Khalid","Konstantinos Argiros","Konstantinos Koufos","Lachie Gill","Lady Gaga","Laufey","Lewis Capaldi","Liamoo","Liis Lemsalu","Lilit Hovhannisyan","Lola Indigo","Lorde","Luis Fonsi","LÉON","Malu","Maluma","MARINA","Martin Garrix","Mathea","Mating Ritual","Max Barskih","May Sfadia","Maëlle","Maître Gims","MC Stojan","Milica Pavlović","Mirella","Miriam Bryant","Molly Sandén","Morat","Myles Smith","MØ","Nelli Matula","Nelly Furtado","Ness","Nina Chuba","Now United","nublu","Orr Amrami Brockman","Paulina Paukštaitytė","Pitbull","Pommelien Thijs","Preslava","Purple Disco Machine","RAYE","Red Electric","Rihanna","Rina Sawayama","Rita Ora","ROSALÍA","ROSÉ","Ruben","Sam Fender","sanah","Shade","Shakira","Shania Twain","Shaun Farrugia","Shawn Mendes","Sheppard","Sia","Sigrid","SKAAR","Static","Stefanie Heinzmann","Stromae","Tate McRae","Tea Tairović","The Script","The Travellers","The Weeknd","Theo Rose","Thorsteinn Einarsson","TINI","Tiësto","Tom Gregory","Troye Sivan","Victor Leksell","VIIVI","Wincent Weiss","Zara Larsson","Zera","Álvaro De Luna","Đana"];
+const ARTIST_FOLD = new Map(ARTIST_NAMES.map((name) => [foldArtist(name), name]));
+const ARTIST_KEEP = ["Sophie and the Giants", "Of Monsters And Men", "Christine and the Queens", "Florence + The Machine", "Tones and I", "Cali y El Dandee"];
+function foldArtist(name) {
+  return String(name).replace(/\u00a0/g, " ").normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^0-9a-z\u0370-\u03ff\u0400-\u04ff]+/giu, " ").replace(/\s+/g, " ").trim();
+}
+function artistHref(name) {
+  return "artist.html?name=" + encodeURIComponent(name);
+}
+function artistAnchor(shown, canonical) {
+  const link = document.createElement("a");
+  link.className = "artist";
+  link.textContent = shown;
+  link.href = artistHref(canonical);
+  link.title = canonical + "'s songs";
+  link.addEventListener("click", (event) => event.stopPropagation());
+  return link;
+}
+function creditPieces(credit) {
+  let text = String(credit).replace(/\u00a0/g, " ");
+  const held = [];
+  ARTIST_KEEP.forEach((phrase) => {
+    const re = new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "ig");
+    text = text.replace(re, (match) => {
+      const token = "\u0001" + held.length + "\u0001";
+      held.push(match);
+      return token;
+    });
+  });
+  return text.split(/(\s*(?:,|&|\+|feat\.|featuring|\bfeat\b|\bft\.?\b|\band\b)\s*|\s+\/\s+|\s+x\s+)/i).map((bit) => bit.replace(/\u0001(\d+)\u0001/g, (_, index) => held[Number(index)]));
+}
+function creditFragment(credit) {
+  const frag = document.createDocumentFragment();
+  creditPieces(credit).forEach((part) => {
+    if (!part) return;
+    const match = part.match(/^(\s*)([\s\S]*?)(\s*)$/);
+    const core = match[2];
+    const trimmed = core.replace(/^[^0-9A-Za-z\u00C0-\u024F\u0370-\u03FF\u0400-\u04FF]+/, "");
+    const prefix = core.slice(0, core.length - trimmed.length);
+    const name = trimmed.replace(/[^0-9A-Za-z\u00C0-\u024F\u0370-\u03FF\u0400-\u04FF]+$/, "");
+    const suffix = trimmed.slice(name.length);
+    if (match[1]) frag.append(match[1]);
+    if (prefix) frag.append(prefix);
+    const known = name ? ARTIST_FOLD.get(foldArtist(name)) : "";
+    if (known) frag.appendChild(artistAnchor(name, known));
+    else if (name) frag.append(name);
+    if (suffix) frag.append(suffix);
+    if (match[3]) frag.append(match[3]);
+  });
+  return frag;
+}
+function creditCell(tag, className, credit) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  node.appendChild(creditFragment(credit));
+  return node;
+}
+
+function linkCredit(credit) {
+  return creditPieces(credit).map((part) => {
+    if (!part) return "";
+    const match = part.match(/^(\s*)([\s\S]*?)(\s*)$/);
+    const core = match[2];
+    const trimmed = core.replace(/^[^0-9A-Za-z\u00C0-\u024F\u0370-\u03FF\u0400-\u04FF]+/, "");
+    const prefix = core.slice(0, core.length - trimmed.length);
+    const name = trimmed.replace(/[^0-9A-Za-z\u00C0-\u024F\u0370-\u03FF\u0400-\u04FF]+$/, "");
+    const suffix = trimmed.slice(name.length);
+    const known = name ? ARTIST_FOLD.get(foldArtist(name)) : "";
+    const body = known ? `<a class="artist" href="${artistHref(known)}">${esc(name)}</a>` : esc(name);
+    return esc(match[1]) + esc(prefix) + body + esc(suffix) + esc(match[3]);
+  }).join("");
+}
+
 const artists = D.artists.map(([name, points, songs, wins, best, hods]) => ({
   name, points, songs, wins, best, hods, avg: points / songs,
 }));
 bars(
   document.getElementById("artist-bars"),
-  artists.map((artist) => ({ label: artist.name, value: artist.avg, text: artist.avg.toFixed(1) })),
+  artists.map((artist) => ({ label: linkCredit(artist.name), value: artist.avg, text: artist.avg.toFixed(1) })),
   artists[0].avg,
+  true,
 );
 table(
   document.getElementById("artist-table"),
   ["Artist", "Average", "Songs", "Eurovision-scale points", "Wins", "Best place", "Head of delegation"],
-  artists.map((artist) => [artist.name, artist.avg.toFixed(1), artist.songs, artist.points.toLocaleString("en-US"), artist.wins, artist.best, artist.hods]),
+  artists.map((artist) => [linkCredit(artist.name), artist.avg.toFixed(1), artist.songs, artist.points.toLocaleString("en-US"), artist.wins, artist.best, artist.hods]),
   [false, true, true, true, true, true, false],
+  [true, false, false, false, false, false, false],
 );
 
 bars(
@@ -376,8 +451,9 @@ bars(
 table(
   document.getElementById("song-table"),
   ["Song", "Artist", "Head of delegation", "Country", "Edition", "Place", "Eurovision-scale points"],
-  D.topScores.map(([points, edition, song, artist, country, hod, place]) => [song, artist, hod, country, "STL " + edition, place, points]),
+  D.topScores.map(([points, edition, song, artist, country, hod, place]) => [song, linkCredit(artist), hod, country, "STL " + edition, place, points]),
   [false, false, false, false, true, true, true],
+  [false, true, false, false, false, false, false],
 );
 
 const pairs = D.pairs.slice().sort((a, b) => b[2] - a[2] || b[1] - a[1]).slice(0, 8);
@@ -704,9 +780,10 @@ table(
   ["Country", "Place", "Song", "Artist", "Head of delegation", "Edition", "Eurovision-scale points"],
   ranked.map(({ name, index }) => {
     const [edition, place, points, song, artist, hod] = D.bestByCountry[index];
-    return [name, place, song, artist, hod, "STL " + edition, points];
+    return [name, place, song, linkCredit(artist), hod, "STL " + edition, points];
   }),
   [false, true, false, false, false, true, true],
+  [false, false, false, true, false, false, false],
 );
 
 renderMapHeading();

@@ -206,12 +206,12 @@
   thead th.sorted, thead th.sorted .arrow { color: var(--accent); }
   td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   td.edition { white-space: nowrap; color: var(--muted); }
-  td.edition a, td.country a, .card a.country, .song-block h3 a {
+  td.edition a, td.country a, .card a.country, .song-block h3 a, a.artist {
     color: inherit;
     text-decoration: none;
     border-bottom: 1px solid var(--line);
   }
-  td.edition a:hover, td.country a:hover, .card a.country:hover, .song-block h3 a:hover {
+  td.edition a:hover, td.country a:hover, .card a.country:hover, .song-block h3 a:hover, a.artist:hover {
     color: var(--accent);
     border-bottom-color: var(--accent);
   }
@@ -503,6 +503,64 @@ function renderPeople() {
   });
 }
 
+const ARTIST_NAMES = ["AIDAN","Aitana","Alexia Evellyn","Alvaro Soler","Ana Mena","Anastasia","Antigoni","Artem Pivovarov","Artemas","Aura Dione","Ava Max","Avril Lavigne","Ayliva","Azahriah","Bad Bunny","BESS","Billie Eilish","Birdy","BLACKPINK","Bobi Andonov","Breskvica","Calema","Calum Scott","Calvin Harris","Camille","Carolina Deslandes","Charli XCX","Charlotte Cardin","Cian Ducrot","Conan Gray","Dagny","David Guetta","Davina Michelle","Dean Lewis","Demi Lovato","Dhurata Dora","Dotan","Dua Lipa","Džejla Ramović","Edis","Ella Eyre","Ella Henderson","Elvana Gjata","Emeli Sandé","Emilia","Emma Heesters","ENISA","Evangelia","Faouzia","Federico Rossi","Fedez","Fernando Daniel","Freya Ridings","Gaia","Galena","Grace Carter","Haloo Helsinki!","Hecht","Hozier","ICEGUYS","ILIRA","Ilta","Indila","INNA","Irina Rimes","J Balvin","Jamie Miller","Jessica Shy","Josephine","Kabouter Plop","Karl-Erik Taukar","KAZKA","Kendji Girac","Khalid","Konstantinos Argiros","Konstantinos Koufos","Lachie Gill","Lady Gaga","Laufey","Lewis Capaldi","Liamoo","Liis Lemsalu","Lilit Hovhannisyan","Lola Indigo","Lorde","Luis Fonsi","LÉON","Malu","Maluma","MARINA","Martin Garrix","Mathea","Mating Ritual","Max Barskih","May Sfadia","Maëlle","Maître Gims","MC Stojan","Milica Pavlović","Mirella","Miriam Bryant","Molly Sandén","Morat","Myles Smith","MØ","Nelli Matula","Nelly Furtado","Ness","Nina Chuba","Now United","nublu","Orr Amrami Brockman","Paulina Paukštaitytė","Pitbull","Pommelien Thijs","Preslava","Purple Disco Machine","RAYE","Red Electric","Rihanna","Rina Sawayama","Rita Ora","ROSALÍA","ROSÉ","Ruben","Sam Fender","sanah","Shade","Shakira","Shania Twain","Shaun Farrugia","Shawn Mendes","Sheppard","Sia","Sigrid","SKAAR","Static","Stefanie Heinzmann","Stromae","Tate McRae","Tea Tairović","The Script","The Travellers","The Weeknd","Theo Rose","Thorsteinn Einarsson","TINI","Tiësto","Tom Gregory","Troye Sivan","Victor Leksell","VIIVI","Wincent Weiss","Zara Larsson","Zera","Álvaro De Luna","Đana"];
+const ARTIST_FOLD = new Map(ARTIST_NAMES.map((name) => [foldArtist(name), name]));
+const ARTIST_KEEP = ["Sophie and the Giants", "Of Monsters And Men", "Christine and the Queens", "Florence + The Machine", "Tones and I", "Cali y El Dandee"];
+function foldArtist(name) {
+  return String(name).replace(/\u00a0/g, " ").normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^0-9a-z\u0370-\u03ff\u0400-\u04ff]+/giu, " ").replace(/\s+/g, " ").trim();
+}
+function artistHref(name) {
+  return "artist.html?name=" + encodeURIComponent(name);
+}
+function artistAnchor(shown, canonical) {
+  const link = document.createElement("a");
+  link.className = "artist";
+  link.textContent = shown;
+  link.href = artistHref(canonical);
+  link.title = canonical + "'s songs";
+  link.addEventListener("click", (event) => event.stopPropagation());
+  return link;
+}
+function creditPieces(credit) {
+  let text = String(credit).replace(/\u00a0/g, " ");
+  const held = [];
+  ARTIST_KEEP.forEach((phrase) => {
+    const re = new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "ig");
+    text = text.replace(re, (match) => {
+      const token = "\u0001" + held.length + "\u0001";
+      held.push(match);
+      return token;
+    });
+  });
+  return text.split(/(\s*(?:,|&|\+|feat\.|featuring|\bfeat\b|\bft\.?\b|\band\b)\s*|\s+\/\s+|\s+x\s+)/i).map((bit) => bit.replace(/\u0001(\d+)\u0001/g, (_, index) => held[Number(index)]));
+}
+function creditFragment(credit) {
+  const frag = document.createDocumentFragment();
+  creditPieces(credit).forEach((part) => {
+    if (!part) return;
+    const match = part.match(/^(\s*)([\s\S]*?)(\s*)$/);
+    const core = match[2];
+    const trimmed = core.replace(/^[^0-9A-Za-z\u00C0-\u024F\u0370-\u03FF\u0400-\u04FF]+/, "");
+    const prefix = core.slice(0, core.length - trimmed.length);
+    const name = trimmed.replace(/[^0-9A-Za-z\u00C0-\u024F\u0370-\u03FF\u0400-\u04FF]+$/, "");
+    const suffix = trimmed.slice(name.length);
+    if (match[1]) frag.append(match[1]);
+    if (prefix) frag.append(prefix);
+    const known = name ? ARTIST_FOLD.get(foldArtist(name)) : "";
+    if (known) frag.appendChild(artistAnchor(name, known));
+    else if (name) frag.append(name);
+    if (suffix) frag.append(suffix);
+    if (match[3]) frag.append(match[3]);
+  });
+  return frag;
+}
+function creditCell(tag, className, credit) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  node.appendChild(creditFragment(credit));
+  return node;
+}
+
 function renderTable(rows, name) {
   const head = document.querySelector("#head");
   head.replaceChildren();
@@ -540,7 +598,7 @@ function renderTable(rows, name) {
       place,
       country,
       song,
-      text("td", "artist", row[4]),
+      creditCell("td", "artist", row[4]),
       text("td", "num points", String(row[5])),
       text("td", "num ev", String(row[8]))
     );
@@ -570,7 +628,7 @@ function renderTable(rows, name) {
     const song = document.createElement("div");
     song.className = "song";
     song.appendChild(songNode(row));
-    card.append(top, score, country, song, text("div", "artist", row[4]));
+    card.append(top, score, country, song, creditCell("div", "artist", row[4]));
     cards.appendChild(card);
   });
 }
@@ -784,7 +842,7 @@ function showCountrySongs(picked) {
         title.target = "_blank";
         title.rel = "noopener noreferrer";
       }
-      body.append(title, text("div", "artist", row[4]));
+      body.append(title, creditCell("div", "artist", row[4]));
       item.append(score, body);
       list.appendChild(item);
     });
