@@ -284,7 +284,7 @@
   <header class="bar">
     <div class="brand">
       <a class="mark" href="index.html">Share the Love</a>
-      <a href="index.html">Scoreboard</a>
+      <a href="scoreboard.html">Scoreboard</a>
     </div>
     <div class="controls">
       <label class="countrypick">
@@ -394,7 +394,7 @@ function hodNode(name) {
 
 function editionNode(row, className) {
   const link = text("a", className || "", "STL " + row[0]);
-  link.href = "index.html#" + row[0];
+  link.href = "scoreboard.html#" + row[0];
   return link;
 }
 
