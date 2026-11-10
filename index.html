@@ -279,6 +279,12 @@
   a.songname { text-decoration: none; }
   a.songname:hover { color: var(--accent); }
   a.songname:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  a.hod {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid var(--line);
+  }
+  a.hod:hover { color: var(--accent); border-bottom-color: var(--accent); }
   .by {
     display: block;
     margin-top: 3px;
@@ -395,6 +401,9 @@
       font-size: 16px;
     }
     .rowbtn.winner .pts { color: var(--accent); }
+    .rowline { border-bottom: 1px solid var(--line); }
+    .rowline .rowbtn { border-bottom: 0; padding-bottom: 0; }
+    .rowline .by { margin: 2px 0 14px calc(2rem + 10px); }
     .ballot { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .28s ease; }
     .ballot.open { grid-template-rows: 1fr; }
     .ballot .inner { overflow: hidden; }
@@ -544,6 +553,21 @@ function watchLink(row) {
   return link;
 }
 
+function hodLink(name) {
+  const link = el("a", "hod", name.trim());
+  link.href = "hod.html?name=" + encodeURIComponent(name.trim());
+  link.title = name.trim() + "'s songs";
+  link.addEventListener("click", (event) => event.stopPropagation());
+  return link;
+}
+
+function byline(row) {
+  const span = el("span", "by");
+  span.append(row[5] + " · ");
+  span.appendChild(hodLink(row[2]));
+  return span;
+}
+
 function setSongTitle(text, row) {
   const title = document.querySelector("#title");
   const url = row ? watchUrl(row) : "";
@@ -645,7 +669,9 @@ function render(edition) {
       ? "STL " + selected + "  ·  " + ballots + (ballots === 1 ? " ballot" : " ballots")
       : "STL " + selected + "  ·  Ballot not on file";
     setSongTitle(winner[4], winner);
-    credit.append(winner[5] + " · " + winner[2] + " for " + winner[3]);
+    credit.append(winner[5] + " · ");
+    credit.appendChild(hodLink(winner[2]));
+    credit.append(" for " + winner[3]);
     document.querySelector("#points").textContent = String(winner[6]);
     document.querySelector("#margin").textContent = !second
       ? ""
@@ -656,14 +682,16 @@ function render(edition) {
     document.title = hodFilter + " · STL " + selected;
     document.querySelector("#kicker").textContent = "STL " + selected + "  ·  " + hodFilter;
     setSongTitle("No song");
-    credit.append(hodFilter + " entered no song in this edition.");
+    credit.appendChild(hodLink(hodFilter));
+    credit.append(" entered no song in this edition.");
     document.querySelector("#points").textContent = "";
     document.querySelector("#margin").textContent = "";
   } else {
     document.title = best[4] + " · " + hodFilter + " · STL " + selected;
     document.querySelector("#kicker").textContent = "STL " + selected + "  ·  " + ordinal(best[0]) + " of " + rows.length + "  ·  " + hodFilter;
     setSongTitle(best[4], best);
-    credit.append(best[5] + " · " + best[3]);
+    credit.append(best[5] + " · " + best[3] + " · ");
+    credit.appendChild(hodLink(hodFilter));
     document.querySelector("#points").textContent = String(best[6]);
     const others = mine.slice(1).map((row) => row[4] + ", " + ordinal(row[0])).join("; ");
     const behind = winner[6] - best[6];
@@ -759,7 +787,7 @@ function paintBoard() {
     const entryInner = el("span", "entry-inner");
     entryInner.appendChild(el("span", "country", row[3]));
     entryInner.appendChild(linkedSong(row));
-    entryInner.appendChild(el("span", "by", row[5] + " · " + row[2]));
+    entryInner.appendChild(byline(row));
     entry.appendChild(entryInner);
     tr.appendChild(entry);
 
@@ -787,6 +815,7 @@ function paintBoard() {
   const pocket = document.querySelector("#pocket");
   pocket.replaceChildren();
   rows.forEach((row, index) => {
+    const line = el("div", "rowline");
     const btn = el("button", "rowbtn" + (row[0] === 1 ? " winner" : ""));
     btn.type = "button";
     btn.setAttribute("aria-expanded", "false");
@@ -795,10 +824,10 @@ function paintBoard() {
     const id = el("span", "id");
     id.appendChild(el("span", "country", row[3]));
     id.appendChild(el("span", "songname", row[4]));
-    id.appendChild(el("span", "by", row[5] + " · " + row[2]));
     btn.appendChild(id);
     btn.appendChild(el("span", "pts", String(row[6])));
-    pocket.appendChild(btn);
+    line.appendChild(btn);
+    line.appendChild(byline(row));
     const ballot = el("div", "ballot");
     const inner = el("div", "inner");
     const watch = watchLink(row);
@@ -820,7 +849,8 @@ function paintBoard() {
     }
     ballot.appendChild(inner);
     ballot.inert = true;
-    pocket.appendChild(ballot);
+    line.appendChild(ballot);
+    pocket.appendChild(line);
   });
 
   const empty = hodFilter && !rows.length;
@@ -937,13 +967,14 @@ scroller.addEventListener("mouseleave", () => {
 });
 
 document.querySelector("#pocket").addEventListener("click", (event) => {
+  if (event.target.closest("a")) return;
   const btn = event.target.closest(".rowbtn");
   if (!btn) return;
-  const ballot = btn.nextElementSibling;
+  const ballot = btn.closest(".rowline").querySelector(".ballot");
   const open = btn.getAttribute("aria-expanded") === "true";
   document.querySelectorAll(".rowbtn[aria-expanded='true']").forEach((other) => {
     other.setAttribute("aria-expanded", "false");
-    const panel = other.nextElementSibling;
+    const panel = other.closest(".rowline").querySelector(".ballot");
     panel.classList.remove("open");
     panel.inert = true;
   });
