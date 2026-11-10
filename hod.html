@@ -206,8 +206,15 @@
   thead th.sorted, thead th.sorted .arrow { color: var(--accent); }
   td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   td.edition { white-space: nowrap; color: var(--muted); }
-  td.edition a { color: inherit; text-decoration: none; border-bottom: 1px solid var(--line); }
-  td.edition a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  td.edition a, td.country a, .card a.country, .song-block h3 a {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid var(--line);
+  }
+  td.edition a:hover, td.country a:hover, .card a.country:hover, .song-block h3 a:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
   td.place { font-family: var(--serif); font-size: 18px; white-space: nowrap; }
   td.place .of { color: var(--faint); font-family: var(--sans); font-size: 12px; }
   tr.winner td.place, tr.winner td.points { color: var(--accent); }
@@ -455,6 +462,13 @@ function editionNode(row, className) {
   return link;
 }
 
+function countryNode(name) {
+  const link = text("a", "country", name);
+  link.href = "country.html?name=" + encodeURIComponent(name);
+  link.title = "Songs for " + name;
+  return link;
+}
+
 function text(tag, className, value) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -517,12 +531,14 @@ function renderTable(rows, name) {
     edition.appendChild(editionNode(row));
     const place = text("td", "num place");
     place.append(String(row[1]), text("span", "of", " of " + row[6]));
+    const country = text("td", "country");
+    country.appendChild(countryNode(row[2]));
     const song = text("td", "song");
     song.appendChild(songNode(row));
     tr.append(
       edition,
       place,
-      text("td", "country", row[2]),
+      country,
       song,
       text("td", "artist", row[4]),
       text("td", "num points", String(row[5])),
@@ -548,10 +564,13 @@ function renderTable(rows, name) {
     const ev = text("div", "ev", String(row[8]));
     ev.title = "Eurovision-scale points";
     score.append(text("div", "points", String(row[5])), ev);
+    const country = document.createElement("div");
+    country.className = "country";
+    country.appendChild(countryNode(row[2]));
     const song = document.createElement("div");
     song.className = "song";
     song.appendChild(songNode(row));
-    card.append(top, score, text("div", "country", row[2]), song, text("div", "artist", row[4]));
+    card.append(top, score, country, song, text("div", "artist", row[4]));
     cards.appendChild(card);
   });
 }
@@ -748,7 +767,10 @@ function showCountrySongs(picked) {
     const block = document.createElement("div");
     block.className = "song-block";
     const heading = document.createElement("h3");
-    heading.textContent = MAP.countries[id] + " · " + songs.length + (songs.length === 1 ? " song" : " songs");
+    const countryLink = text("a", "", MAP.countries[id]);
+    countryLink.href = "country.html?name=" + encodeURIComponent(MAP.countries[id]);
+    countryLink.title = "Songs for " + MAP.countries[id];
+    heading.append(countryLink, " · " + songs.length + (songs.length === 1 ? " song" : " songs"));
     const list = document.createElement("ul");
     list.className = "pick-list";
     songs.slice(0, 5).forEach((row) => {
@@ -783,7 +805,7 @@ function paintPersonMap(name, rows) {
   const countries = mapGroups.size;
   document.querySelector("#map-blurb").textContent = rows.length + (rows.length === 1 ? " song" : " songs")
     + " in " + countries + (countries === 1 ? " country. " : " countries. ")
-    + "Click a country for the five highest Eurovision-scale scores there.";
+    + "Click a country for the five highest Eurovision-scale scores there. The country name opens every song.";
   const svg = document.querySelector("#large-map");
   const ns = "http://www.w3.org/2000/svg";
   svg.setAttribute("aria-label", "Songs entered by " + name);

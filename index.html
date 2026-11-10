@@ -267,6 +267,8 @@
     color: var(--muted);
     font-weight: 600;
   }
+  a.country { color: var(--muted); text-decoration: none; }
+  a.country:hover { color: var(--accent); }
   .songname {
     display: block;
     margin-top: 3px;
@@ -401,9 +403,31 @@
       font-size: 16px;
     }
     .rowbtn.winner .pts { color: var(--accent); }
-    .rowline { border-bottom: 1px solid var(--line); }
-    .rowline .rowbtn { border-bottom: 0; padding-bottom: 0; }
-    .rowline .by { margin: 2px 0 14px calc(2rem + 10px); }
+    .rowline {
+      display: grid;
+      grid-template-columns: 2rem minmax(0, 1fr) auto;
+      column-gap: 10px;
+      align-items: start;
+      border-bottom: 1px solid var(--line);
+      padding-top: 14px;
+    }
+    .rowline .rowbtn {
+      grid-column: 1 / -1;
+      grid-row: 1;
+      border-bottom: 0;
+      padding: 0;
+      width: 100%;
+    }
+    .rowline .songname { margin-top: 18px; }
+    .rowline .country {
+      grid-column: 2;
+      grid-row: 1;
+      align-self: start;
+      position: relative;
+      z-index: 1;
+    }
+    .rowline .by { grid-column: 2; margin: 2px 0 14px 0; }
+    .rowline .ballot { grid-column: 1 / -1; }
     .ballot { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .28s ease; }
     .ballot.open { grid-template-rows: 1fr; }
     .ballot .inner { overflow: hidden; }
@@ -561,6 +585,14 @@ function hodLink(name) {
   return link;
 }
 
+function countryLink(name, className) {
+  const link = el("a", className || "country", name);
+  link.href = "country.html?name=" + encodeURIComponent(name);
+  link.title = "Songs for " + name;
+  link.addEventListener("click", (event) => event.stopPropagation());
+  return link;
+}
+
 function byline(row) {
   const span = el("span", "by");
   span.append(row[5] + " · ");
@@ -671,7 +703,8 @@ function render(edition) {
     setSongTitle(winner[4], winner);
     credit.append(winner[5] + " · ");
     credit.appendChild(hodLink(winner[2]));
-    credit.append(" for " + winner[3]);
+    credit.append(" for ");
+    credit.appendChild(countryLink(winner[3], "hod"));
     document.querySelector("#points").textContent = String(winner[6]);
     document.querySelector("#margin").textContent = !second
       ? ""
@@ -690,7 +723,9 @@ function render(edition) {
     document.title = best[4] + " · " + hodFilter + " · STL " + selected;
     document.querySelector("#kicker").textContent = "STL " + selected + "  ·  " + ordinal(best[0]) + " of " + rows.length + "  ·  " + hodFilter;
     setSongTitle(best[4], best);
-    credit.append(best[5] + " · " + best[3] + " · ");
+    credit.append(best[5] + " · ");
+    credit.appendChild(countryLink(best[3], "hod"));
+    credit.append(" · ");
     credit.appendChild(hodLink(hodFilter));
     document.querySelector("#points").textContent = String(best[6]);
     const others = mine.slice(1).map((row) => row[4] + ", " + ordinal(row[0])).join("; ");
@@ -785,7 +820,7 @@ function paintBoard() {
 
     const entry = el("td", "pin p-entry");
     const entryInner = el("span", "entry-inner");
-    entryInner.appendChild(el("span", "country", row[3]));
+    entryInner.appendChild(countryLink(row[3]));
     entryInner.appendChild(linkedSong(row));
     entryInner.appendChild(byline(row));
     entry.appendChild(entryInner);
@@ -821,12 +856,10 @@ function paintBoard() {
     btn.setAttribute("aria-expanded", "false");
     btn.dataset.index = String(index);
     btn.appendChild(el("span", "rk", String(row[0])));
-    const id = el("span", "id");
-    id.appendChild(el("span", "country", row[3]));
-    id.appendChild(el("span", "songname", row[4]));
-    btn.appendChild(id);
+    btn.appendChild(el("span", "songname", row[4]));
     btn.appendChild(el("span", "pts", String(row[6])));
     line.appendChild(btn);
+    line.appendChild(countryLink(row[3]));
     line.appendChild(byline(row));
     const ballot = el("div", "ballot");
     const inner = el("div", "inner");
