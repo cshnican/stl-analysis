@@ -783,7 +783,7 @@ function paintPersonMap(name, rows) {
   const countries = mapGroups.size;
   document.querySelector("#map-blurb").textContent = rows.length + (rows.length === 1 ? " song" : " songs")
     + " in " + countries + (countries === 1 ? " country. " : " countries. ")
-    + "Tap or hover a country for the five highest Eurovision-scale scores there.";
+    + "Click a country for the five highest Eurovision-scale scores there.";
   const svg = document.querySelector("#large-map");
   const ns = "http://www.w3.org/2000/svg";
   svg.setAttribute("aria-label", "Songs entered by " + name);
@@ -806,10 +806,6 @@ function paintPersonMap(name, rows) {
     path.setAttribute("vector-effect", "non-scaling-stroke");
     path.style.cursor = count > 0 ? "pointer" : "grab";
     if (count > 0) path.dataset.pick = active.join(",");
-    path.addEventListener("mouseenter", () => {
-      if (count > 0) showCountrySongs(active.join(","));
-      else document.querySelector("#hover-songs").replaceChildren();
-    });
     svg.appendChild(path);
   });
   const scale = mapView.width / MAP_W;
@@ -828,7 +824,6 @@ function paintPersonMap(name, rows) {
     circle.setAttribute("vector-effect", "non-scaling-stroke");
     circle.dataset.pick = String(dot.id);
     circle.style.cursor = "pointer";
-    circle.addEventListener("mouseenter", () => showCountrySongs(String(dot.id)));
     svg.appendChild(circle);
   });
   writeMapView(svg, { x: 0, y: 0, width: MAP_W, height: MAP_H });
