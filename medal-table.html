@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Medal table</title>
+<style>
+  :root {
+    --sheet: #f4efe6;
+    --ink: #1b1814;
+    --muted: #6e665c;
+    --faint: #978e82;
+    --line: #ddd4c6;
+    --line-strong: #1b1814;
+    --accent: #9d3418;
+    --hot: #ebe3d4;
+    --gold: #8a6414;
+    --silver: #6e665c;
+    --bronze: #9d3418;
+    --serif: "Iowan Old Style", Palatino, "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    --sans: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --sheet: #141210;
+      --ink: #f4efe6;
+      --muted: #b7aea1;
+      --faint: #b3aa9e;
+      --line: #2e2a24;
+      --line-strong: #f4efe6;
+      --accent: #ff7d5c;
+      --hot: #241e18;
+      --gold: #e2c56a;
+      --silver: #c8bfb2;
+      --bronze: #ff7d5c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--sheet);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.45;
+  }
+  main {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 28px 40px 72px;
+  }
+  .mark {
+    margin: 0;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 20px;
+    letter-spacing: -0.02em;
+  }
+  .kicker {
+    margin: 28px 0 12px;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .lockup {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px 22px;
+    padding-bottom: 26px;
+    border-bottom: 1px solid var(--line);
+  }
+  h1, .figure {
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(2.75rem, 5.4vw, 4.25rem);
+    line-height: 0.92;
+    letter-spacing: -0.035em;
+  }
+  h1 { text-wrap: balance; }
+  .figure { color: var(--gold); font-variant-numeric: tabular-nums; }
+  .credit {
+    margin: 12px 0 0;
+    color: var(--muted);
+    font-size: 16px;
+  }
+  .rule {
+    margin: 22px 0 28px;
+    color: var(--faint);
+    font-size: 13px;
+    max-width: 68ch;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  caption.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  th, td {
+    padding: 12px 8px;
+    border-bottom: 1px solid var(--line);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  thead th {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--muted);
+    vertical-align: bottom;
+  }
+  th.hod, td.hod, thead th.name { text-align: left; }
+  td.hod {
+    font-family: var(--serif);
+    font-size: 20px;
+    letter-spacing: -0.02em;
+  }
+  td.rank {
+    width: 3rem;
+    color: var(--faint);
+    font-family: var(--serif);
+    font-size: 18px;
+  }
+  tr.leader td.rank, tr.leader td.hod { color: var(--accent); }
+  td.gold { color: var(--gold); font-weight: 600; }
+  td.silver { color: var(--silver); }
+  td.bronze { color: var(--bronze); }
+  thead th.gold { color: var(--gold); }
+  thead th.silver { color: var(--silver); }
+  thead th.bronze { color: var(--bronze); }
+  td.total { color: var(--muted); }
+  tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
+  @media (max-width: 720px) {
+    main { padding: 20px 18px 56px; }
+    td.hod { font-size: 18px; }
+    th, td { padding: 11px 4px; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    main { animation: rise .5s ease both; }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <p class="mark">Share the Love</p>
+  <p class="kicker">STL editions 1–63</p>
+  <div class="lockup">
+    <h1>Medal table</h1>
+    <p class="figure">10</p>
+  </div>
+  <p class="credit">Sihan · 10 gold, 8 silver, 8 bronze</p>
+  <p class="rule">A gold medal is first place, a silver medal is second, and a bronze medal is third. Places follow the Eurovision tie-break: more points, then more 12s, then 10s, then 8s, and on through 1. If the whole card matches, the song earlier in the running order places higher. Where votes from 7 down to 1 were not saved, the countback stops after the 8s. Heads of delegation are ordered by gold, then silver, then bronze. Equal medal counts share a rank. One edition can give the same person more than one medal.</p>
+  <table>
+    <caption class="sr-only">Medal table for heads of delegation, ordered by gold, then silver, then bronze</caption>
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th class="name" scope="col">Head of delegation</th>
+        <th class="gold" scope="col">Gold</th>
+        <th class="silver" scope="col">Silver</th>
+        <th class="bronze" scope="col">Bronze</th>
+        <th scope="col">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="leader">
+        <td class="rank">1</td>
+        <th class="hod" scope="row">Sihan</th>
+        <td class="gold">10</td>
+        <td class="silver">8</td>
+        <td class="bronze">8</td>
+        <td class="total">26</td>
+      </tr>
+      <tr>
+        <td class="rank">2</td>
+        <th class="hod" scope="row">Harry</th>
+        <td class="gold">7</td>
+        <td class="silver">7</td>
+        <td class="bronze">5</td>
+        <td class="total">19</td>
+      </tr>
+      <tr>
+        <td class="rank">3</td>
+        <th class="hod" scope="row">Anita</th>
+        <td class="gold">6</td>
+        <td class="silver">5</td>
+        <td class="bronze">4</td>
+        <td class="total">15</td>
+      </tr>
+      <tr>
+        <td class="rank">4</td>
+        <th class="hod" scope="row">Chris</th>
+        <td class="gold">6</td>
+        <td class="silver">5</td>
+        <td class="bronze">3</td>
+        <td class="total">14</td>
+      </tr>
+      <tr>
+        <td class="rank">5</td>
+        <th class="hod" scope="row">Matthew</th>
+        <td class="gold">5</td>
+        <td class="silver">5</td>
+        <td class="bronze">8</td>
+        <td class="total">18</td>
+      </tr>
+      <tr>
+        <td class="rank">6</td>
+        <th class="hod" scope="row">Alex</th>
+        <td class="gold">4</td>
+        <td class="silver">5</td>
+        <td class="bronze">4</td>
+        <td class="total">13</td>
+      </tr>
+      <tr>
+        <td class="rank">7</td>
+        <th class="hod" scope="row">Jana</th>
+        <td class="gold">4</td>
+        <td class="silver">5</td>
+        <td class="bronze">3</td>
+        <td class="total">12</td>
+      </tr>
+      <tr>
+        <td class="rank">8</td>
+        <th class="hod" scope="row">Ori</th>
+        <td class="gold">3</td>
+        <td class="silver">5</td>
+        <td class="bronze">4</td>
+        <td class="total">12</td>
+      </tr>
+      <tr>
+        <td class="rank">9</td>
+        <th class="hod" scope="row">Paolo</th>
+        <td class="gold">3</td>
+        <td class="silver">3</td>
+        <td class="bronze">7</td>
+        <td class="total">13</td>
+      </tr>
+      <tr>
+        <td class="rank">10</td>
+        <th class="hod" scope="row">Hanna</th>
+        <td class="gold">3</td>
+        <td class="silver">3</td>
+        <td class="bronze">5</td>
+        <td class="total">11</td>
+      </tr>
+      <tr>
+        <td class="rank">11</td>
+        <th class="hod" scope="row">Dominik</th>
+        <td class="gold">3</td>
+        <td class="silver">0</td>
+        <td class="bronze">0</td>
+        <td class="total">3</td>
+      </tr>
+      <tr>
+        <td class="rank">11</td>
+        <th class="hod" scope="row">Sandra</th>
+        <td class="gold">3</td>
+        <td class="silver">0</td>
+        <td class="bronze">0</td>
+        <td class="total">3</td>
+      </tr>
+      <tr>
+        <td class="rank">13</td>
+        <th class="hod" scope="row">Twan</th>
+        <td class="gold">2</td>
+        <td class="silver">2</td>
+        <td class="bronze">2</td>
+        <td class="total">6</td>
+      </tr>
+      <tr>
+        <td class="rank">14</td>
+        <th class="hod" scope="row">Danny</th>
+        <td class="gold">1</td>
+        <td class="silver">5</td>
+        <td class="bronze">5</td>
+        <td class="total">11</td>
+      </tr>
+      <tr>
+        <td class="rank">15</td>
+        <th class="hod" scope="row">Polly</th>
+        <td class="gold">1</td>
+        <td class="silver">2</td>
+        <td class="bronze">1</td>
+        <td class="total">4</td>
+      </tr>
+      <tr>
+        <td class="rank">16</td>
+        <th class="hod" scope="row">Lukas</th>
+        <td class="gold">1</td>
+        <td class="silver">1</td>
+        <td class="bronze">2</td>
+        <td class="total">4</td>
+      </tr>
+      <tr>
+        <td class="rank">17</td>
+        <th class="hod" scope="row">Oisín</th>
+        <td class="gold">1</td>
+        <td class="silver">0</td>
+        <td class="bronze">0</td>
+        <td class="total">1</td>
+      </tr>
+      <tr>
+        <td class="rank">18</td>
+        <th class="hod" scope="row">João</th>
+        <td class="gold">0</td>
+        <td class="silver">1</td>
+        <td class="bronze">1</td>
+        <td class="total">2</td>
+      </tr>
+      <tr>
+        <td class="rank">18</td>
+        <th class="hod" scope="row">Nurti</th>
+        <td class="gold">0</td>
+        <td class="silver">1</td>
+        <td class="bronze">1</td>
+        <td class="total">2</td>
+      </tr>
+      <tr>
+        <td class="rank">20</td>
+        <th class="hod" scope="row">Guilherme</th>
+        <td class="gold">0</td>
+        <td class="silver">0</td>
+        <td class="bronze">0</td>
+        <td class="total">0</td>
+      </tr>
+      <tr>
+        <td class="rank">20</td>
+        <th class="hod" scope="row">Ioannis</th>
+        <td class="gold">0</td>
+        <td class="silver">0</td>
+        <td class="bronze">0</td>
+        <td class="total">0</td>
+      </tr>
+      <tr>
+        <td class="rank">20</td>
+        <th class="hod" scope="row">SQ</th>
+        <td class="gold">0</td>
+        <td class="silver">0</td>
+        <td class="bronze">0</td>
+        <td class="total">0</td>
+      </tr>
+    </tbody>
+  </table>
+</main>
+</body>
+</html>
