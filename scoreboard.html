@@ -610,7 +610,8 @@ const ARTIST_NAMES = ["AIDAN","Aitana","Alexia Evellyn","Alvaro Soler","Ana Mena
 const ARTIST_FOLD = new Map(ARTIST_NAMES.map((name) => [foldArtist(name), name]));
 const ARTIST_KEEP = ["Sophie and the Giants", "Of Monsters And Men", "Christine and the Queens", "Florence + The Machine", "Tones and I", "Cali y El Dandee"];
 function foldArtist(name) {
-  return String(name).replace(/\u00a0/g, " ").normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^0-9a-z\u0370-\u03ff\u0400-\u04ff]+/giu, " ").replace(/\s+/g, " ").trim();
+  const folded = String(name).replace(/\u00a0/g, " ").normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^0-9a-z\u0370-\u03ff\u0400-\u04ff]+/giu, " ").replace(/\s+/g, " ").trim();
+  return folded === "malou" || folded === "μαλου" ? "malu" : folded;
 }
 function artistHref(name) {
   return "artist.html?name=" + encodeURIComponent(name);
@@ -635,7 +636,7 @@ function creditPieces(credit) {
       return token;
     });
   });
-  return text.split(/(\s*(?:,|&|\+|feat\.|featuring|\bfeat\b|\bft\.?\b|\band\b)\s*|\s+\/\s+|\s+x\s+)/i).map((bit) => bit.replace(/\u0001(\d+)\u0001/g, (_, index) => held[Number(index)]));
+  return text.split(/(\s*(?:,|&|\+|feat\.|featuring|\bfeat\b|\bft\.?\b|\band\b)\s*|\s+\/\s+|\s+[xXхХ]\s+)/i).map((bit) => bit.replace(/\u0001(\d+)\u0001/g, (_, index) => held[Number(index)]));
 }
 function creditFragment(credit) {
   const frag = document.createDocumentFragment();
