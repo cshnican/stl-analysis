@@ -547,10 +547,26 @@ const live = document.querySelector("#live");
 const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const numbers = Object.keys(BOARDS).map(Number).sort((a, b) => a - b);
 
+const DATES = {"1":"1 May 2021","2":"5 June 2021","3":"1 July 2021","4":"7 August 2021","5":"4 September 2021","6":"2 October 2021","7":"6 November 2021","8":"4 December 2021","9":"8 January 2022","10":"6 February 2022","11":"6 March 2022","12":"3 April 2022","13":"1 May 2022","14":"5 June 2022","15":"3 July 2022","16":"14 August 2022","17":"4 September 2022","18":"2 October 2022","19":"5 November 2022","20":"7 January 2023","21":"5 February 2023","22":"5 March 2023","23":"2 April 2023","24":"7 May 2023","25":"3 June 2023","26":"2 July 2023","27":"5 August 2023","28":"3 September 2023","29":"1 October 2023","30":"5 November 2023","31":"7 January 2024","32":"4 February 2024","33":"3 March 2024","34":"6 April 2024","35":"4 May 2024","36":"2 June 2024","37":"7 July 2024","38":"4 August 2024","39":"8 September 2024","40":"13 October 2024","41":"3 November 2024","42":"5 January 2025","43":"2 February 2025","44":"2 March 2025","45":"6 April 2025","46":"4 May 2025","47":"7 June 2025","48":"6 July 2025","49":"9 August 2025","50":"7 September 2025","51":"5 October 2025","52":"2 November 2025","53":"11 January 2026","54":"7 February 2026","55":"1 March 2026","56":"5 April 2026","57":"3 May 2026","58":"7 June 2026","59":"12 July 2026","60":"2 August 2026","61":"6 September 2026","62":"11 October 2026","63":"8 November 2026"};
+
+function editionDate(number) {
+  return DATES[String(number)] || "";
+}
+
+function editionLabel(number) {
+  const date = editionDate(number);
+  return date ? "STL " + number + " · " + date : "STL " + number;
+}
+
+function editionKicker(number, rest) {
+  const date = editionDate(number);
+  return "STL " + number + (date ? "  ·  " + date : "") + (rest ? "  ·  " + rest : "");
+}
+
 numbers.slice().reverse().forEach((number) => {
   const option = document.createElement("option");
   option.value = String(number);
-  option.textContent = "STL " + number;
+  option.textContent = editionLabel(number);
   editionSelect.appendChild(option);
 });
 
@@ -773,8 +789,8 @@ function render(edition) {
   credit.replaceChildren();
   if (!hodFilter) {
     document.querySelector("#kicker").textContent = ballots
-      ? "STL " + selected + "  ·  " + ballots + (ballots === 1 ? " ballot" : " ballots")
-      : "STL " + selected + "  ·  Ballot not on file";
+      ? editionKicker(selected, ballots + (ballots === 1 ? " ballot" : " ballots"))
+      : editionKicker(selected, "Ballot not on file");
     setSongTitle(winner[4], winner);
     credit.append(winner[5] + " · ");
     credit.appendChild(hodLink(winner[2]));
@@ -789,7 +805,7 @@ function render(edition) {
         : gap + (gap === 1 ? " point" : " points") + " ahead of " + second[4];
   } else if (!best) {
     document.title = hodFilter + " · STL " + selected;
-    document.querySelector("#kicker").textContent = "STL " + selected + "  ·  " + hodFilter;
+    document.querySelector("#kicker").textContent = editionKicker(selected, hodFilter);
     setSongTitle("No song");
     credit.appendChild(hodLink(hodFilter));
     credit.append(" entered no song in this edition.");
@@ -798,7 +814,7 @@ function render(edition) {
     document.querySelector("#margin").textContent = "";
   } else {
     document.title = best[4] + " · " + hodFilter + " · STL " + selected;
-    document.querySelector("#kicker").textContent = "STL " + selected + "  ·  " + ordinal(best[0]) + " of " + rows.length + "  ·  " + hodFilter;
+    document.querySelector("#kicker").textContent = editionKicker(selected, ordinal(best[0]) + " of " + rows.length + "  ·  " + hodFilter);
     setSongTitle(best[4], best);
     credit.append(best[5] + " · ");
     credit.appendChild(countryLink(best[3], "hod"));
@@ -826,8 +842,8 @@ function render(edition) {
   scroller.classList.remove("scrolled");
   const shown = best || winner;
   live.textContent = hodFilter
-    ? (best ? hodFilter + " in STL " + selected + ". " + best[4] + ", " + ordinal(best[0]) + ", " + best[6] + " points, " + best[8] + " on the Eurovision scale." : hodFilter + " entered no song in STL " + selected + ".")
-    : "STL " + selected + ". " + shown[4] + " by " + shown[5] + ", " + shown[6] + " points, " + shown[8] + " on the Eurovision scale.";
+    ? (best ? hodFilter + " in " + editionLabel(selected) + ". " + best[4] + ", " + ordinal(best[0]) + ", " + best[6] + " points, " + best[8] + " on the Eurovision scale." : hodFilter + " entered no song in " + editionLabel(selected) + ".")
+    : editionLabel(selected) + ". " + shown[4] + " by " + shown[5] + ", " + shown[6] + " points, " + shown[8] + " on the Eurovision scale.";
 }
 
 function paintBoard() {
@@ -850,7 +866,7 @@ function paintBoard() {
 
   table = document.querySelector("#board");
   table.replaceChildren();
-  const caption = el("caption", "sr-only", "STL " + current + " scoreboard, ranked by the Eurovision tie-break");
+  const caption = el("caption", "sr-only", editionLabel(current) + " scoreboard, ranked by the Eurovision tie-break");
   table.appendChild(caption);
   const head = document.createElement("thead");
   const headRow = document.createElement("tr");
