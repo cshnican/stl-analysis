@@ -1,32 +1,107 @@
 # Share the Love analysis
 
-Share the Love (STL) is a song contest. This repository holds the results through STL 63, the ballots that could be read, and two pages you can open in a browser.
+Share the Love (STL) is a monthly, Eurovision-style fan contest. Each participant is a Head of Delegation and enters songs for countries. Voters give the Eurovision card once each: 12, 10, 8, 7, 6, 5, 4, 3, 2, and 1. This repository holds the results through STL 63, the ballots that could be read, and a static website that walks through them.
 
-## Pages
+## Website
 
-- `index.html` is the edition scoreboard. Each row is a song and each column is a head of delegation who voted. Rank follows the Eurovision tie-break: higher points, then more 12s, then more 10s, then 8s, and on through 1. If the whole card matches, the song earlier in the running order places higher. Click a name to sort the songs by the points that person gave. Click `#` to return to the tie-break order.
-- `song-distribution.html` shows where the 1,845 songs come from. It covers heads of delegation, countries, artist averages, and the highest scores.
+The pages are HTML files in the project folder. Open `index.html` in a browser. They share one paper-and-ink design, follow the system light or dark setting, and work on a phone. The front page links to the scoreboard and the song map. From a song, the head of delegation’s name and the country open their pages, and an artist credited on at least three songs opens theirs.
 
-Eurovision-scale points are 1,008 times a song's percentage of the maximum vote, rounded to the nearest point. 1,008 is the maximum from 42 voting countries giving 24 points each.
+Place on the scoreboard, the head-of-delegation page, the country page, the artist page, and the medal table is the tie-break rank in that edition’s full field. The tie-break is higher jury points, then more 12s, then more 10s, then more 8s, then more 7s down through 1. When two songs match at every point value, the song earlier in the running order places higher. For an edition whose ballot stops at 12, 10, and 8, the countback stops there and the published order is kept. The rank number stays the tie-break rank when a table is sorted again.
 
-## Data
+Eurovision-scale points put a jury total on a 1,008-point scale. The score is 1,008 times the song’s percentage of the maximum vote, rounded half up to the nearest point. 1,008 is the maximum from 42 voting countries giving 24 points each. The percentage is the “% of the Maximum Vote” column in `data/entry_data.csv`.
 
-`data/entry_data.csv` is the published result for every song in STL 1–63. `data/STL screenshot ballots.csv` and `data/STL group contest stats 2.csv` hold vote rows. The STL 63 grid was read from the results image. Geo voted in STL 63 and is not matched to a head of delegation.
+### Front page
 
-## Not in this repository
+`index.html` introduces the contest. It links to the scoreboard and to the page that shows where the songs come from.
 
-These stay on the local machine:
+### Scoreboard
 
-- `results_screenshots/` holds the ScoreWiz screenshots. `scripts/extract_votes.py` reads them from that folder. They are not committed.
-- `hod-song-pca.html` is the audio-feature page. It is not committed.
+`scoreboard.html` shows one edition at a time, STL 1 through STL 63. The edition menu includes the date, written as day, month, and year, as in “STL 60 · 2 August 2026”.
 
-## Vote script
+Each row is a song. The columns are rank, song, jury points, Eurovision-scale points, and, when a ballot is on file, one column per voter. Click a heading to sort. The first click on a points column puts the highest score first, and the next click reverses it. Songs with equal points fall back to the tie-break rank. Click `#` to restore the tie-break order, and click `#` again to reverse the ranks. On a phone, the same sort is a menu and a direction button. Changing the edition clears the sort.
 
-The rest of this file tells you how `scripts/extract_votes.py` reads a screenshot.
+A head-of-delegation control keeps only the songs that person entered. The place shown is still their tie-break place in the full field, and the filter stays on while you change edition. When they entered no song, the page says so.
+
+A song title with a known video links to YouTube. Voter headings sort the songs by the points that person gave. Egon and Pieter voted a full card in STL 60 and have entered no song, so they appear as voter columns. Geo voted in STL 63, and that column is unmatched to a head of delegation. The STL 63 grid was read from the results image.
+
+Complete ballots are on file for STL 1–14, 28, 32–36, 38–48, 50, 51, 53–60, 62, and 63. STL 15–27, 29–31, 37, 49, 52, and 61 show the ranked result with the points, the 12s, the 10s, and the 8s.
+
+### Where songs come from
+
+`song-distribution.html` covers the 1,845 songs in editions 1–63: 22 heads of delegation and 131 countries. Each edition has at most one song per country. The page has five views.
+
+- Artists with at least two songs, ordered by average Eurovision-scale points. A collaboration counts for every named artist who also has their own credit. Credits that differ by case or accents are one artist.
+- The twenty songs with the highest Eurovision-scale points.
+- A grid of song counts, with heads of delegation down the rows and countries across the columns.
+- A map shaded by each country’s best published place. A first place is the darkest. Click, tap, or hover a country to read the song, the artist, and the head of delegation. When several songs share that place, the one with more Eurovision-scale points is shown, and a later edition breaks a remaining tie. England, Scotland, Wales, Northern Ireland, and Malta are dots. Pinch or use the buttons to zoom, then drag to move the map.
+- The eight head-of-delegation and country pairs with the most songs.
+
+### Heads of delegation, countries, and artists
+
+`hod.html` lists every song one head of delegation entered, with the tie-break place, the jury points, and the Eurovision-scale points. A map shades the countries where that person has entered songs. Click a country for the five highest Eurovision-scale scores there. The country name opens every song from that country.
+
+`country.html` lists every song entered for one country, with the same place and points.
+
+`artist.html` lists the 157 artists credited on at least three songs. A collaboration is listed for every named artist who also has their own credit. Credits that differ by case or accents are one artist, including Evangelia and Ευαγγελία, and Malou is counted with Malu. A song is included when the artist’s name is a name in the credit. The credit is split on a comma, `&`, `+`, feat., ft., and, a spaced slash, and a spaced x, including the Cyrillic letter х. These credits are kept as one name: Sophie and the Giants, Of Monsters And Men, Christine and the Queens, Florence + The Machine, Tones and I, and Cali y El Dandee. AU/RA, HUNTR/X, Allie X, and RY X stay one name because the slash or the X has no space beside it.
+
+`medal-table.html` counts a gold medal for first place, silver for second, and bronze for third, using the same tie-break. Heads of delegation are ordered by gold, then silver, then bronze. Equal medal counts share a rank, and one edition can give the same person more than one medal. This page stands apart from the front page, the scoreboard, and the song map.
+
+## Dataset
+
+`data/entry_data.csv` is the published result for every song in STL 1–63. It has 1,845 rows, from 22 to 34 songs in an edition. The 22 heads of delegation who have entered a song are Alex, Anita, Chris, Danny, Dominik, Guilherme, Hanna, Harry, Ioannis, Jana, João, Lukas, Matthew, Nurti, Oisín, Ori, Paolo, Polly, SQ, Sandra, Sihan, and Twan. The columns are Edition, Code, Head of Delegation, Country, Song, Artist, Placing, Points, 12 points, 10 points, 8 points, RO Position, # of HODs Voting, % of HODs Voting, Average Points Given, % of the Maximum Vote, and % of the Total Vote. Placing is the published place. Country text is stored as published and can include a flag symbol. The pages calculate the tie-break rank from these points and, where a full ballot exists, from every point value.
+
+`data/STL screenshot ballots.csv` has one row for each point a voter gave: 3,670 rows for editions 28, 33–36, 38–48, 50, 51, 53–56, 60, and 62. The columns are Edition, Code, HOD (the voter), Receiving HOD, Receiving Country, and Points. Blank cells are omitted. The file is UTF-8 with a byte-order mark, and each line ends with a carriage return and a line feed. `scripts/extract_votes.py` writes this file. The procedure is in [How the vote script works](#how-the-vote-script-works). The STL 60 rows include the guest voters Egon and Pieter.
+
+`data/STL group contest stats 2.csv` is an earlier compiled sheet of 6,670 vote rows, each marked manual or automatic in a source column. It covers editions 1–14, 28–48, 50, 51, 53, 55–60, and 62. Where the scoreboard and this sheet both have a full ballot, the votes match, with two exceptions. In STL 57 the sheet writes Dominik as Dom. In STL 60 the sheet gives Harry’s Australia song a 6 from Matthew, and the scoreboard gives that 6 to Hanna. Editions 29, 30, 31, and 37 contain cards that are short of the full point list, and the scoreboard shows those editions as a ranked result. STL 54 is absent from this sheet. Its grid, and the checked STL 60 grid, are in the screenshot ballot file. The STL 63 grid is stored on the scoreboard page, read from the results image.
+
+`data/master_sheet.csv` joins vote rows to the receiving song, the artist, a Spotify id, and audio features. It has 3,940 rows across 27 editions.
+
+`data/song_info.csv` holds 1,778 Spotify track ids. `data/audio_features.csv` has one row per entry for editions 1–62 (1,814 rows): acousticness, danceability, energy, instrumentalness, key, liveness, loudness, mode, speechiness, tempo, and valence. `scripts/fetch_audio_features.py` writes it. The measures come from ReccoBeats, which returns the same fields, and some rows are filled from `data/ShareTheLove.csv`, a Spotify export of 1,190 tracks.
+
+`data/my_stats.csv` and `data/my_stats.numbers` are a personal list of 86 songs from STL 1–43, with year, running order, country, result, and points. `scripts/my_stl.R` charts that list against the Spotify export.
+
+## Changelog
+
+The list follows the commits on `main`, newest first.
+
+### 12 November 2026
+
+- `5f5198e` — Open a country’s songs when the map is clicked on desktop, on the head-of-delegation map and on the best-result map.
+
+### 11 November 2026
+
+- `3dd9892` — Show each edition’s date on the scoreboard.
+- `88fc331` — Add the STL 60 ballot, including guest voters Egon and Pieter.
+- `11eed88` — Count Artem Pivovarov’s Cyrillic-x collaboration, and treat Malou as Malu.
+- `866c4bf` — Add a page for every artist credited on at least three songs.
+- `20619b6` — Add the STL 54 ballot so the scoreboard can show every vote.
+- `2de43e0` — Add a front page that introduces Share the Love and leads to the scoreboard and the song map. The scoreboard moves to `scoreboard.html`.
+- `1200cf4` — Show each song’s Eurovision-scale points beside the jury total on the scoreboard.
+- `d9452e8` — Add a page of every song entered for a country.
+- `6297f72` — Show a country’s top songs on the head-of-delegation map after a click.
+
+### 10 November 2026
+
+- `1f31adf` — Show each head of delegation’s song map on their own page.
+- `334708d` — Show each song’s Eurovision-scale points on the head-of-delegation page.
+- `02f5af7` — Add a sortable page of each head of delegation’s songs.
+- `d1e7205` — Add a medal table, and correct Alex and Anita’s STL 62 votes in the stats sheet.
+- `97d2ea2` — Swap Alex and Anita’s votes in STL 62.
+- `af9e079` — Link scoreboard songs to their YouTube videos, and restore the song-map link.
+
+### 9 November 2026
+
+- `f3b3ac6` — Make the song maps usable on a phone.
+- `d689f2e` — Merge pull request #2, bringing the restyled song page onto `main`.
+- `92d4917` — Match the song page to the scoreboard and link the two pages.
+- `17e700d` — Merge pull request #1, bringing the head-of-delegation filter onto `main`.
+- `28288f7` — Filter each edition to one head of delegation’s songs.
+- `a1967d2` — Serve the scoreboard as the site index.
+- `e5a28cf` — Publish the STL analysis through edition 63, with the scoreboard, the song map, the results, the ballots, and the vote script.
 
 # How the vote script works
 
-This file tells you how the vote script works. The words in this file follow ASD-STE100, Simplified Technical English. The vote script is `scripts/extract_votes.py`. The script builds two programs that read the screenshot images.
+This section tells you how the vote script works. The words in this section follow ASD-STE100, Simplified Technical English. The vote script is `scripts/extract_votes.py`. The script builds two programs that read the screenshot images.
 
 ## Contents
 
