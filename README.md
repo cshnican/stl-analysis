@@ -22,7 +22,7 @@ Each row is a song. The columns are rank, song, jury points, Eurovision-scale po
 
 A head-of-delegation control keeps only the songs that person entered. The place shown is still their tie-break place in the full field, and the filter stays on while you change edition. When they entered no song, the page says so.
 
-A song title with a known video links to YouTube. Voter headings sort the songs by the points that person gave. Egon and Pieter voted a full card in STL 60 and have entered no song, so they appear as voter columns. Geo voted in STL 63, and that column is unmatched to a head of delegation. The STL 63 grid was read from the results image.
+A song title with a known video links to YouTube. Voter headings sort the songs by the points that person gave. Egon and Pieter voted a full card in STL 60 and have entered no song, so they appear as voter columns. Georga voted in STL 47, 57, 58, and 63 and has entered no song. The STL 63 grid was read from the results image.
 
 Complete ballots are on file for STL 1–14, 28, 32–36, 38–48, 50, 51, 53–60, 62, and 63. STL 15–27, 29–31, 37, 49, 52, and 61 show the ranked result with the points, the 12s, the 10s, and the 8s.
 
